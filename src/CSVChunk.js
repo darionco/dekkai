@@ -5,15 +5,27 @@ const kLineBreakCode = ('\n').charCodeAt(0);
 export class CSVChunk {
     constructor(blob) {
         this.mBlob = blob;
-        this.mRows = -1;
+        this.mRowCount = -1;
         this.mFront = 0;
-        this.mBack = this.mBlob.byteLength;
+        this.mBack = this.mBlob.size;
         this.mBytesFront = null;
         this.mBytesBack = null;
         this.mBytes = null;
         this.mView = null;
 
         this.mOffset = 0;
+    }
+
+    get front() {
+        return this.mFront;
+    }
+
+    get back() {
+        return this.mBack;
+    }
+
+    get size() {
+        return this.mBlob.size;
     }
 
     get bytes() {
@@ -24,12 +36,16 @@ export class CSVChunk {
         return this.mView;
     }
 
-    get rows() {
-        return this.mRows;
-    }
-
     get offset() {
         return this.mOffset;
+    }
+
+    get rowCount() {
+        return this.mRowCount;
+    }
+
+    set rowCount(value) {
+        this.mRowCount = value;
     }
 
     async load() {
@@ -46,7 +62,7 @@ export class CSVChunk {
     }
 
     reset() {
-        this.mOffset = 0;
+        this.mOffset = this.mFront;
     }
 
     setFront(offset = this.mOffset) {
@@ -62,11 +78,10 @@ export class CSVChunk {
     async nextRow(row) {
         await this.load();
 
-        const initialOffset = this.mOffset;
         let isInQuotes = false;
         let char;
         let i;
-        for (i = 0; i < this.mBytes.byteLength; ++i) {
+        for (i = this.mOffset; i < this.mBytes.byteLength; ++i) {
             char = this.mView.getUint8(i);
             if (char === kQuotesCode) {
                 isInQuotes = !isInQuotes;
@@ -76,15 +91,16 @@ export class CSVChunk {
             } else if (char === kLineBreakCode) {
                 if (isInQuotes) {
                     this.mOffset = i + 1;
-                    return new Uint8Array(this.mBytes, initialOffset, i - initialOffset);
+                    return false;
                 }
 
                 row.push(new Uint8Array(this.mBytes, this.mOffset, i - this.mOffset));
                 this.mOffset = i + 1;
-                return null;
+                return true;
             }
         }
-        return new Uint8Array(this.mBytes, initialOffset, i - initialOffset);
+        this.mOffset = i;
+        return false;
     }
 
     _load() {

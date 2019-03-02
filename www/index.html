@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <title>HugeCSV</title>
     <script type="text/javascript" src="hugecsv.browser.js"></script>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
 </head>
 <body>
 <script>
@@ -14,9 +22,10 @@
         document.body.appendChild(fileInput);
         fileInput.addEventListener('change', async e => {
             e.preventDefault();
+            document.body.innerHTML = '';
             const table = new hugecsv.CSVTable(fileInput.files[0]);
             await table.initMetadata();
-            console.log(table);
+            table.render(document.body);
         });
     }
 
