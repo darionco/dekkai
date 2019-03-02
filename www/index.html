@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HugeCSV</title>
+    <script type="text/javascript" src="hugecsv.browser.js"></script>
+</head>
+<body>
+<script>
+    async function main() {
+        const fileInput = document.createElement('input');
+        fileInput.setAttribute('type', 'file');
+        fileInput.setAttribute('name', 'dataFile');
+        document.body.appendChild(fileInput);
+        fileInput.addEventListener('change', async e => {
+            e.preventDefault();
+            const table = new hugecsv.CSVTable(fileInput.files[0]);
+            await table.initMetadata();
+            console.log(table);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', main);
+</script>
+</body>
+</html>
