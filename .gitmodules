@@ -1,0 +1,3 @@
+[submodule "lib/TableView.js"]
+	path = lib/TableView.js
+	url = https://github.com/darionco/TableView.js.git
