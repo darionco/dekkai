@@ -1,6 +1,7 @@
 import {CSVChunk} from './CSVChunk';
 import {TableView} from '../lib/TableView.js/src';
 import {TableRow} from '../lib/TableView.js/src';
+import {CSVWorkerManager} from './CSVWorkerManager';
 
 const kChunkSize = 1024 * 1024 * 4; // 4MB
 
@@ -18,6 +19,7 @@ export class CSVTable {
         this.mEstimatedRowCount = 0;
         this.mHeader = null;
         this.mLoaded = false;
+        this.mWorkerManager = new CSVWorkerManager();
 
         let offset = 0;
         while (offset < this.mFile.size) {
@@ -37,6 +39,22 @@ export class CSVTable {
         if (!await this.mChunks[0].nextRow(row)) {
             throw 'Malformed CSV!';
         }
+
+        const start = new Date();
+        const promises = [];
+        for (let i = 0; i < this.mChunks.length; ++i) {
+            const promise = this.mWorkerManager.scheduleTask('parseChunk', {
+                chunk: CSVChunk.serialize(this.mChunks[i]),
+                columnCount: row.length,
+            });
+            promises.push(promise);
+        }
+
+        Promise.all(promises).then(result => {
+            const end = new Date();
+            console.log(`Time: ${end - start}`);
+            console.log(result);
+        });
 
         this.mChunks[0].setFront();
         this.mHeader = row;

@@ -3,6 +3,16 @@ const kQuotesCode = ('"').charCodeAt(0);
 const kLineBreakCode = ('\n').charCodeAt(0);
 
 export class CSVChunk {
+    static serialize(chunk) {
+        return Object.assign({}, chunk);
+    }
+
+    static deserialize(info) {
+        const ret = new CSVChunk(info.mBlob);
+        Object.assign(ret, info);
+        return ret;
+    }
+
     constructor(blob) {
         this.mBlob = blob;
         this.mRowCount = -1;
