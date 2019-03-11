@@ -21,6 +21,7 @@ async function analyzeBlob(options) {
     const view = new DataView(buffer);
     const row = [];
     const columns = {};
+    let count = 0;
     let offset = 0;
     let column;
     let value;
@@ -50,6 +51,8 @@ async function analyzeBlob(options) {
             throw 'ERROR: Malformed CSV!';
         }
 
+        ++count;
+
         for (i = 0; i < headerLength; ++i) {
             column = header[i].name;
             value = String.fromCharCode(...row[i]).replace(/^"(.+(?="$))"$/, '$1');
@@ -69,16 +72,15 @@ async function analyzeBlob(options) {
         }
     }
 
-    console.log(columns);
-
     return {
         index: options.index,
         columns,
+        count,
     };
 }
 
 function sendError(id, reason) {
-    global.postMessage({
+    self.postMessage({
         type: 'error',
         id,
         reason,
@@ -86,14 +88,14 @@ function sendError(id, reason) {
 }
 
 function sendSuccess(id, data = null) {
-    global.postMessage({
+    self.postMessage({
         type: 'success',
         id,
         data,
     });
 }
 
-global.onmessage = async function CSVManagerWorkerOnMessage(e) {
+self.onmessage = async function CSVManagerWorkerOnMessage(e) {
     const message = e.data;
     switch (message.type) {
         case 'calculateOffsets':
@@ -104,8 +106,12 @@ global.onmessage = async function CSVManagerWorkerOnMessage(e) {
             sendSuccess(null, await analyzeBlob(message.options));
             break;
 
+        case 'close':
+            self.close();
+            break;
+
         default:
-            sendError(null, `Unrecognized message type "$message.type{}"`);
+            sendError(null, `Unrecognized message type "${message.type}"`);
             break;
     }
 };

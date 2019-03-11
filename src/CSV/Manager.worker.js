@@ -1,5 +1,7 @@
 import DataWorker from 'worker-loader!./Data.worker';
 import {loadBlob, readRow} from './DataTools';
+import {WorkerPool} from './WorkerPool';
+import {Analyzer} from './Analyzer';
 
 const kChunkSize = 1024 * 1024 * 4; // 4MB
 const kHeaderMaxSize = 1024 * 256; // 256KB
@@ -10,11 +12,17 @@ class Manager {
         this.mFile = null;
         this.mHeader = [];
         this.mChunks = [];
-        this.mWorkers = [];
-        this.mTasks = [];
+        this.mAnalyzer = null;
+        this.mWorkerPool = new WorkerPool();
 
         for (let i = 0; i < workerCount; ++i) {
-            this.mWorkers.push(new DataWorker);
+            this.mWorkerPool.addWorker(new DataWorker());
+        }
+    }
+
+    destroy() {
+        while (this.mWorkerPool.workers.length) {
+            this.mWorkerPool.removeWorker().terminate();
         }
     }
 
@@ -37,7 +45,28 @@ class Manager {
             this.mChunks.push(blob);
         }
 
-        this._analyzeChunks(this.mChunks, 4);
+        const workers = [];
+        let killWorkers = false;
+
+        if (this.mWorkerPool.workerCount === 1) {
+            workers.push(new DataWorker());
+            killWorkers = true;
+        } else if (this.mWorkerPool.workerCount === 2) {
+            workers.push(this.mWorkerPool.removeWorker());
+        } else {
+            while (this.mWorkerPool.workerCount > 2) {
+                workers.push(this.mWorkerPool.removeWorker());
+            }
+        }
+
+        this.mAnalyzer = new Analyzer(this.mHeader, this.mChunks);
+        this.mAnalyzer.run(workers, killWorkers).then(() => {
+            if (!killWorkers) {
+                while (this.mAnalyzer.workerCount) {
+                    this.mWorkerPool.addWorker(this.mAnalyzer.workerPool.removeWorker());
+                }
+            }
+        });
 
         return this.mHeader;
     }
@@ -65,7 +94,7 @@ class Manager {
         const promises = [];
         for (let i = 0, n = offsets.length - 1; i < n; ++i) {
             const options = Object.assign({}, { index: i, file }, offsets[i]);
-            promises.push(this._scheduleTask('calculateOffsets', options));
+            promises.push(this.mWorkerPool.scheduleTask('calculateOffsets', options));
         }
 
         return Promise.all(promises).then(results => {
@@ -75,74 +104,10 @@ class Manager {
             }
         });
     }
-
-    _analyzeChunks(chunks, workerCount) {
-        const start = new Date();
-
-        const promises = [];
-        const workers = [];
-        const tasks = [];
-
-        while (workers.length < workerCount && this.mWorkers.length) {
-            workers.push(this.mWorkers.pop());
-        }
-
-        for (let i = 0; i < chunks.length; ++i) {
-            promises.push(this._scheduleTask('analyzeBlob', {
-                header: this.mHeader,
-                index: i,
-                blob: chunks[i],
-            }, workers, tasks));
-        }
-
-        return Promise.all(promises).then(() => console.log(`Analysis took: ${new Date() - start}ms`));
-    }
-
-    _scheduleTask(type, options, workerPool = this.mWorkers, taskQueue = this.mTasks) {
-        return new Promise((resolve, reject) => {
-            if (workerPool.length) {
-                this._executeTask(workerPool.pop(), type, options, resolve, reject, workerPool, taskQueue);
-            } else {
-                taskQueue.unshift({
-                    type,
-                    options,
-                    resolve,
-                    reject,
-                });
-            }
-        });
-    }
-
-    _executeTask(worker, type, options, resolve, reject, workerPool, taskQueue) {
-        worker.onmessage = e => {
-            const message = e.data;
-            worker.onmessage = null;
-
-            if (message.type === 'success') {
-                resolve(message.data);
-            } else if (message.type === 'error') {
-                reject(message.reason);
-            } else {
-                throw `ERROR: Unrecognized message type sent from data worker "${message.type}"`;
-            }
-
-            if (taskQueue.length) {
-                const task = taskQueue.pop();
-                this._executeTask(worker, task.type, task.options, task.resolve, task.reject, workerPool, taskQueue);
-            } else {
-                workerPool.push(worker);
-            }
-        };
-
-        worker.postMessage({
-            type,
-            options,
-        });
-    }
 }
 
 function sendError(id, reason) {
-    global.postMessage({
+    self.postMessage({
         type: 'error',
         id,
         reason,
@@ -150,14 +115,14 @@ function sendError(id, reason) {
 }
 
 function sendSuccess(id, data = null) {
-    global.postMessage({
+    self.postMessage({
         type: 'success',
         id,
         data,
     });
 }
 
-global.onmessage = async function CSVManagerWorkerOnMessage(e) {
+self.onmessage = async function CSVManagerWorkerOnMessage(e) {
     const message = e.data;
     switch (message.type) {
         case 'initialize':
@@ -172,8 +137,13 @@ global.onmessage = async function CSVManagerWorkerOnMessage(e) {
             }
             break;
 
+        case 'close':
+            gManager.destroy();
+            gManager = null;
+            break;
+
         default:
-            sendError(message.id, `Unrecognized message type "$message.type{}"`);
+            sendError(message.id, `Unrecognized message type "${message.type}"`);
             break;
     }
 };
