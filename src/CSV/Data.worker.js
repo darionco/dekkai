@@ -79,6 +79,28 @@ async function analyzeBlob(options) {
     };
 }
 
+async function parseBlob(options) {
+    const buffer = await DataTools.loadBlob(options.blob);
+    const header = options.header;
+    const headerLength = header.length;
+    const view = new DataView(buffer);
+    const rows = [];
+    let offset = 0;
+
+    while (offset < buffer.byteLength) {
+        const row = [];
+        offset = DataTools.readRow(view, offset, row);
+
+        if (row.length !== headerLength) {
+            throw 'ERROR: Malformed CSV!';
+        }
+
+        rows.push(row);
+    }
+
+    return rows;
+}
+
 function sendError(id, reason) {
     self.postMessage({
         type: 'error',
@@ -104,6 +126,10 @@ self.onmessage = async function CSVManagerWorkerOnMessage(e) {
 
         case 'analyzeBlob':
             sendSuccess(null, await analyzeBlob(message.options));
+            break;
+
+        case 'parseBlob':
+            sendSuccess(null, await parseBlob(message.options));
             break;
 
         case 'close':

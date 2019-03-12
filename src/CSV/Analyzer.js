@@ -1,6 +1,14 @@
+import DataWorker from 'worker-loader!./Data.worker';
 import {WorkerPool} from './WorkerPool';
 
 export class Analyzer {
+    static createWorkers(count) {
+        const workers = [];
+        for (let i = 0; i < count; ++i) {
+            workers.push(new DataWorker());
+        }
+    }
+
     constructor(header, chunks) {
         this.mHeader = header;
         this.mChunks = chunks;
@@ -61,7 +69,11 @@ export class Analyzer {
         return this.mRowCount;
     }
 
-    run(workers, killWorkers = false) {
+    get chunkMeta() {
+        return this.mChunkMeta;
+    }
+
+    run(workers, cb = null, killWorkers = false) {
         workers.forEach(worker =>{
             this.addWorker(worker);
         });
@@ -103,8 +115,9 @@ export class Analyzer {
                 ++this.mProcessedChunks;
                 this.mProcessedBytes += this.mChunks[result.index].size;
 
-                console.log(this.progress);
-                console.log(this.estimatedRowCount);
+                if (cb) {
+                    cb(result, this.progress, this.estimatedRowCount);
+                }
             }));
         }
 

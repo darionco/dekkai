@@ -27,9 +27,7 @@
             // await table.initMetadata();
             // table.render(document.body);
             const table = new hugecsv.CSV.Table(fileInput.files[0]);
-            const header = await table.header;
-            console.log(header);
-            console.log(table);
+            await table.renderPage(document.body, 0);
         });
     }
 

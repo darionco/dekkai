@@ -1,7 +1,6 @@
 import DataWorker from 'worker-loader!./Data.worker';
 import {loadBlob, readRow} from './DataTools';
 import {WorkerPool} from './WorkerPool';
-import {Analyzer} from './Analyzer';
 
 const kChunkSize = 1024 * 1024 * 4; // 4MB
 const kHeaderMaxSize = 1024 * 256; // 256KB
@@ -11,7 +10,6 @@ export class WorkerManager {
         this.mFile = null;
         this.mHeader = [];
         this.mChunks = [];
-        this.mAnalyzer = null;
         this.mWorkerPool = new WorkerPool();
 
         for (let i = 0; i < workerCount; ++i) {
@@ -23,6 +21,14 @@ export class WorkerManager {
         while (this.mWorkerPool.workers.length) {
             this.mWorkerPool.removeWorker().terminate();
         }
+    }
+
+    get header() {
+        return this.mHeader;
+    }
+
+    get chunks() {
+        return this.mChunks;
     }
 
     async initialize(file) {
@@ -58,19 +64,17 @@ export class WorkerManager {
             }
         }
 
-        this.mAnalyzer = new Analyzer(this.mHeader, this.mChunks);
-        this.mAnalyzer.run(workers, killWorkers).then(() => {
-            if (!killWorkers) {
-                while (this.mAnalyzer.workerCount) {
-                    this.mWorkerPool.addWorker(this.mAnalyzer.workerPool.removeWorker());
-                }
-            }
-        });
-
         return {
             header: this.mHeader,
             chunkCount: this.mChunks.length,
         };
+    }
+
+    async parseBlob(index) {
+        return await this.mWorkerPool.scheduleTask('parseBlob', {
+            blob: this.mChunks[index],
+            header: this.mHeader,
+        });
     }
 
     async _readHeader() {

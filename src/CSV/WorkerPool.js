@@ -42,8 +42,11 @@ export class WorkerPool {
     }
 
     removeWorker() {
-        if (this.mWorkers.length) {
-            return this.mWorkers.pop();
+        if (this.mIdleWorkers.length) {
+            const worker = this.mIdleWorkers.pop();
+            const i = this.mWorkers.indexOf(worker);
+            this.mWorkers.splice(i, 1);
+            return worker;
         }
         return null;
     }
