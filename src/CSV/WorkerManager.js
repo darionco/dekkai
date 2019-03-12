@@ -5,9 +5,8 @@ import {Analyzer} from './Analyzer';
 
 const kChunkSize = 1024 * 1024 * 4; // 4MB
 const kHeaderMaxSize = 1024 * 256; // 256KB
-let gManager = null;
 
-class Manager {
+export class WorkerManager {
     constructor(workerCount = 4) {
         this.mFile = null;
         this.mHeader = [];
@@ -68,7 +67,10 @@ class Manager {
             }
         });
 
-        return this.mHeader;
+        return {
+            header: this.mHeader,
+            chunkCount: this.mChunks.length,
+        };
     }
 
     async _readHeader() {
@@ -105,45 +107,3 @@ class Manager {
         });
     }
 }
-
-function sendError(id, reason) {
-    self.postMessage({
-        type: 'error',
-        id,
-        reason,
-    });
-}
-
-function sendSuccess(id, data = null) {
-    self.postMessage({
-        type: 'success',
-        id,
-        data,
-    });
-}
-
-self.onmessage = async function CSVManagerWorkerOnMessage(e) {
-    const message = e.data;
-    switch (message.type) {
-        case 'initialize':
-            if (gManager) {
-                sendError(message.id, 'CSV::Manager::Worker already initialized');
-            } else {
-                const start = new Date();
-                gManager = new Manager();
-                sendSuccess(message.id, await gManager.initialize(message.file));
-                const end = new Date();
-                console.log(`Initialization took:${end - start}ms`);
-            }
-            break;
-
-        case 'close':
-            gManager.destroy();
-            gManager = null;
-            break;
-
-        default:
-            sendError(message.id, `Unrecognized message type "${message.type}"`);
-            break;
-    }
-};
