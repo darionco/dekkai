@@ -1,3 +1,5 @@
+.DS_store
+
 node_modules
 .idea
 dist
@@ -6,3 +8,9 @@ www/keys/*
 keys/*.p8
 server/*.pem
 server/*.crt
+
+rust/bin
+rust/pkg
+rust/target
+rust/wasm-pack.log
+rust/Cargo.lock
