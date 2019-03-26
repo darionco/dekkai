@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HugeCSV</title>
+    <title>dekkai</title>
     <script type="text/javascript" src="hugecsv.browser.js"></script>
     <style>
         body {
@@ -16,19 +16,21 @@
 <body>
 <script>
     async function main() {
-        const fileInput = document.createElement('input');
-        fileInput.setAttribute('type', 'file');
-        fileInput.setAttribute('name', 'dataFile');
-        document.body.appendChild(fileInput);
-        fileInput.addEventListener('change', async e => {
-            e.preventDefault();
-            document.body.innerHTML = '';
-            // const table = new hugecsv.CSVTable(fileInput.files[0]);
-            // await table.initMetadata();
-            // table.render(document.body);
-            const table = new hugecsv.CSV.Table(fileInput.files[0]);
-            await table.renderPage(document.body, 0);
-        });
+        // const fileInput = document.createElement('input');
+        // fileInput.setAttribute('type', 'file');
+        // fileInput.setAttribute('name', 'dataFile');
+        // document.body.appendChild(fileInput);
+        // fileInput.addEventListener('change', async e => {
+        //     e.preventDefault();
+        //     document.body.innerHTML = '';
+        //     // const table = new hugecsv.CSVTable(fileInput.files[0]);
+        //     // await table.initMetadata();
+        //     // table.render(document.body);
+        //     const table = new hugecsv.CSV.Table(fileInput.files[0]);
+        //     await table.renderPage(document.body, 0);
+        // });
+        const blobs = [];
+        console.log(blobs);
     }
 
     document.addEventListener('DOMContentLoaded', main);
