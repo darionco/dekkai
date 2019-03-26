@@ -1,30 +1,26 @@
 {
     "name": "hugecsv",
     "version": "1.0.0",
-    "main": "src/index.js",
+    "entry": "src/index.js",
+    "author": "Dario Segura",
     "license": "MIT",
     "scripts": {
+        "docs": "documentation build src/** -f md -o README.md --markdown-toc false",
         "build": "npm-run-all --parallel build:**",
-        "build:dev": "webpack",
-        "build:dev:browser": "cross-env TARGET='browser' webpack",
-        "build:prod": "cross-env NODE_ENV='production' webpack -p",
-        "build:prod:browser": "cross-env NODE_ENV='production' TARGET='browser' webpack -p",
-        "start": "cross-env TARGET='browser' webpack-dev-server --host 0.0.0.0 --port 8091 --content-base ./www --hot --disableHostCheck",
-        "watch": "cross-env TARGET='browser' webpack --watch --progress"
+        "build:dev": "rollup --config",
+        "start": "cross-env TARGET='browser' rollup --config --watch",
+        "prepublishOnly": "npm-run-all build"
     },
     "devDependencies": {
         "cross-env": "^5.2.0",
-        "css-loader": "^2.1.0",
         "eslint": "^5.13.0",
-        "eslint-loader": "^2.1.2",
-        "node-sass": "^4.11.0",
-        "npm-run-all": "^4.1.5",
-        "sass-loader": "^7.1.0",
-        "style-loader": "^0.23.1",
-        "webpack": "^4.29.3",
-        "webpack-cli": "^3.2.3",
-        "webpack-dev-server": "^3.1.14",
-        "worker-loader": "^2.0.0"
+        "npm-run-all": "^4.1.5"
     },
-    "dependencies": {}
+    "dependencies": {
+        "rollup": "^1.7.3",
+        "rollup-plugin-eslint": "^5.1.0",
+        "rollup-plugin-live-server": "^1.0.1",
+        "rollup-plugin-web-worker-loader": "^0.1.0",
+        "webcpu": "^0.1.0"
+    }
 }
