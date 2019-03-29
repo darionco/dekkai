@@ -1,4 +1,8 @@
 export class WorkerPool {
+    static get sharedInstance() {
+        return kSharedInstance; // eslint-disable-line
+    }
+
     constructor(workers = []) {
         this.mWorkers = workers;
         this.mIdleWorkers = [...workers];
@@ -82,3 +86,5 @@ export class WorkerPool {
         }
     }
 }
+
+const kSharedInstance = new WorkerPool([]);

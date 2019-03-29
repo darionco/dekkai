@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>dekkai</title>
-    <script type="text/javascript" src="hugecsv.browser.js"></script>
+    <script type="text/javascript" src="dist/iife/dekkai.js"></script>
     <style>
         body {
             padding: 0;
@@ -11,26 +11,167 @@
             width: 100vw;
             height: 100vh;
         }
+
+        tbody tr:nth-child(odd) {
+            background-color: #fdfdff;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f0f0f6;
+        }
+
+        table,
+        td {
+            border-collapse: collapse;
+            border: 1px solid #333;
+            font-family: monospace;
+        }
+        thead,
+        tfoot {
+            background-color: #ccccd4;
+        }
+        th {
+            padding: 3px 10px;
+            border: 1px solid #333;
+        }
     </style>
 </head>
 <body>
 <script>
     async function main() {
-        // const fileInput = document.createElement('input');
-        // fileInput.setAttribute('type', 'file');
-        // fileInput.setAttribute('name', 'dataFile');
-        // document.body.appendChild(fileInput);
-        // fileInput.addEventListener('change', async e => {
-        //     e.preventDefault();
-        //     document.body.innerHTML = '';
-        //     // const table = new hugecsv.CSVTable(fileInput.files[0]);
-        //     // await table.initMetadata();
-        //     // table.render(document.body);
-        //     const table = new hugecsv.CSV.Table(fileInput.files[0]);
-        //     await table.renderPage(document.body, 0);
-        // });
-        const blobs = [];
-        console.log(blobs);
+        const separatorTitle = document.createElement('span');
+        separatorTitle.innerText = 'Separator: ';
+        document.body.appendChild(separatorTitle);
+
+        const separator = document.createElement('input');
+        separator.setAttribute('type', 'text');
+        separator.setAttribute('name', 'separator');
+        separator.value = ',';
+        document.body.appendChild(separator);
+
+        document.body.appendChild(document.createElement('br'));
+
+        const qualifierTitle = document.createElement('span');
+        qualifierTitle.innerText = ' Qualifier: ';
+        document.body.appendChild(qualifierTitle);
+
+        const qualifier = document.createElement('input');
+        qualifier.setAttribute('type', 'text');
+        qualifier.setAttribute('name', 'qualifier');
+        qualifier.value = '"';
+        document.body.appendChild(qualifier);
+
+        document.body.appendChild(document.createElement('br'));
+
+        const firstRowTitle = document.createElement('span');
+        firstRowTitle.innerText = ' Parse first row as header: ';
+        document.body.appendChild(firstRowTitle);
+
+        const firstRow = document.createElement('input');
+        firstRow.setAttribute('type', 'checkbox');
+        firstRow.setAttribute('name', 'Parse first row as header');
+        firstRow.checked = true;
+        document.body.appendChild(firstRow);
+
+
+        document.body.appendChild(document.createElement('br'));
+
+        const threadCountTitle = document.createElement('span');
+        threadCountTitle.innerText = ' Thread count: ';
+        document.body.appendChild(threadCountTitle);
+
+        const threadCount = document.createElement('select');
+        let option;
+
+        option = document.createElement('option');
+        option.value = -1;
+        option.innerText = 'Auto';
+        threadCount.appendChild(option);
+
+        for (let i = 1; i <= 16; i++) {
+            option = document.createElement('option');
+            option.value = i;
+            option.innerText = i;
+            threadCount.appendChild(option);
+        }
+
+        document.body.appendChild(threadCount);
+
+        document.body.appendChild(document.createElement('br'));
+        document.body.appendChild(document.createElement('br'));
+
+        const fileInput = document.createElement('input');
+        fileInput.setAttribute('type', 'file');
+        fileInput.setAttribute('name', 'dataFile');
+        document.body.appendChild(fileInput);
+
+        fileInput.addEventListener('change', async e => {
+            e.preventDefault();
+
+            const threads = parseInt(threadCount.options[threadCount.selectedIndex].value, 10);
+            if (threads === -1) {
+                document.body.innerText = 'Detecting CPU cores...';
+            }
+            await dekkai.init(threads);
+
+            document.body.innerHTML = '';
+
+            const start = performance.now();
+            const table = await dekkai.loadLocalFile(fileInput.files[0], {
+                separator: separator.value,
+                qualifier: qualifier.value,
+                firstRowHeader: firstRow.checked,
+            });
+            const time = performance.now() - start;
+            let html = '';
+
+            html += `<div>Loading complete, took: ${time}ms</div>`;
+            html += `<div>Total columns: ${table.header.length}</div>`;
+            html += `<div>Total rows: ${table.rowCount}</div>`;
+            html += `<div>Malformed rows: ${table.meta.malformedRows}</div>`;
+
+            document.body.innerHTML = html;
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            html += `<div>First ${Math.min(300, table.rowCount)} rows</div>`;
+
+            html += '<table>';
+            html += '<thead>';
+            html += '<tr>';
+            for (let i = 0; i < table.header.length; ++i) {
+                html += `<th>${table.header[i].name}</th>`;
+            }
+            html += '</tr>';
+            html += '<tr>';
+            for (let i = 0; i < table.header.length; ++i) {
+                const column = table.header[i];
+                if (column.stringCount > column.numberCount) {
+                    html += '<th>string</th>';
+                } else if (column.stringCount === 0) {
+                    html += `<th>${column.floatCount ? 'float' : 'int'}</th>`;
+                } else {
+                    html += `<th>${column.floatCount ? 'float' : 'int'} (${Math.floor((column.numberCount / table.rowCount) * 1000) / 10}% certainty)</th>`;
+                }
+            }
+            html += '</tr>';
+            html += '</thead>';
+
+            html += '<tbody>';
+            for (let i = 0; i < 300 && i < table.rowCount; ++i) {
+                html += '<tr>';
+                const row = await table.getRow(i);
+                row.forEach(cell => {
+                    html += `<td>${cell}</td>`;
+                });
+                html += '</tr>';
+            }
+            html += '</tbody>';
+            html += '</table>';
+
+            document.body.innerHTML = html;
+
+            console.log(table);
+        });
     }
 
     document.addEventListener('DOMContentLoaded', main);
