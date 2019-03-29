@@ -6,3 +6,4 @@ dist
 example
 gulpfile.js
 tests
+*.wasm
