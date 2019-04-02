@@ -2,7 +2,7 @@ import {WorkerPool} from './workers/WorkerPool';
 import Worker from 'web-worker:./workers/Worker';
 import {Table} from './csv/Table';
 import {WebCPU} from 'webcpu';
-import wasmData from './wasm/DataProcessor.wasm';
+import wasmData from './wasm/bin/Parser.wasm';
 
 const _dekkai = (function() {
     const initializedSymbol = Symbol('dekkai::initialized');

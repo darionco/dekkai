@@ -10,7 +10,7 @@ export const defaultConfig = {
     linebreak: '\n',
     firstRowHeader: true,
     maxRowSize: sizeOf1KB * 128,
-    chunkSize: sizeOf1MB * 8,
+    chunkSize: sizeOf1MB * 4,
     maxLoadedChunks: 3,
 };
 
@@ -171,7 +171,7 @@ export async function analyzeBlobs(blobs, header, config = defaultConfig) {
     };
 
     for (let i = 0; i < results.length; ++i) {
-        chunks[results[i].index] = new DataChunk(blobs[results[i].index], results[i].rowOffsets, results.columnsMeta);
+        chunks[results[i].index] = new DataChunk(blobs[results[i].index], results[i].rowOffsets, results[i].columnsMeta);
         aggregated.rowCount += results[i].rowCount;
         aggregated.malformedRows += results[i].malformedRows;
         aggregated.minRowLength = Math.min(aggregated.minRowLength, results[i].minRowLength);

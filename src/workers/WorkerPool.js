@@ -25,14 +25,15 @@ export class WorkerPool {
         return this.mTasks.length || this.mIdleWorkers.length !== this.mWorkers.length;
     }
 
-    scheduleTask(type, options) {
+    scheduleTask(type, options, transferable = null) {
         return new Promise((resolve, reject) => {
             if (this.mIdleWorkers.length) {
-                this._executeTask(this.mIdleWorkers.pop(), type, options, resolve, reject);
+                this._executeTask(this.mIdleWorkers.pop(), type, options, transferable, resolve, reject);
             } else {
                 this.mTasks.unshift({
                     type,
                     options,
+                    transferable,
                     resolve,
                     reject,
                 });
@@ -55,7 +56,7 @@ export class WorkerPool {
         return null;
     }
 
-    _executeTask(worker, type, options, resolve, reject) {
+    _executeTask(worker, type, options, transferable, resolve, reject) {
         worker.onmessage = e => {
             const message = e.data;
             worker.onmessage = null;
@@ -74,13 +75,13 @@ export class WorkerPool {
         worker.postMessage({
             type,
             options,
-        });
+        }, transferable);
     }
 
     _executeTaskFromQueue(worker) {
         if (this.mTasks.length) {
             const task = this.mTasks.pop();
-            this._executeTask(worker, task.type, task.options, task.resolve, task.reject);
+            this._executeTask(worker, task.type, task.options, task.transferable, task.resolve, task.reject);
         } else {
             this.mIdleWorkers.push(worker);
         }

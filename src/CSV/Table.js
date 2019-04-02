@@ -1,4 +1,4 @@
-import {defaultConfig, readHeader, sliceFile, analyzeBlobs, readRow} from '../data/DataTools';
+import {defaultConfig, readHeader, sliceFile, analyzeBlobs} from '../data/DataTools';
 
 const _TableImp = (function() {
     class Table {
@@ -50,22 +50,11 @@ const _TableImp = (function() {
                 if (this.mLoadedChunks.length >= this.mConfig.maxLoadedChunks) {
                     this.mLoadedChunks.shift().unload();
                 }
-                this.mLoadedChunks.push(await chunk.load());
-            }
-            const rawRow = [];
-            readRow(chunk.view, chunk.offsets[rowIndex], rawRow, this.mConfig);
-            // const rowEnd = rowIndex < (chunk.rowCount - 1) ? chunk.offsets[rowIndex + 1] : chunk.buffer.byteLength;
-            // rawRow.push(new Uint8Array(chunk.buffer, chunk.offsets[rowIndex], rowEnd - chunk.offsets[rowIndex]));
-            if (rawRow.length !== this.mHeader.length) {
-                console.warn(`WARNING: Malformed - column mismatch expected [${this.mHeader.length}], got [${rawRow.length}]`); // eslint-disable-line
+                await chunk.load(this.mConfig);
+                this.mLoadedChunks.push(chunk);
             }
 
-            const row = [];
-            rawRow.forEach(buffer => {
-                row.push(String.fromCharCode(...buffer).trim().replace(this.mRegExp, '$1'));
-            });
-
-            return row;
+            return chunk.getRow(rowIndex);
         }
 
         _generateRowsMap(chunks) {
