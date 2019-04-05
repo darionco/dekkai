@@ -11,7 +11,7 @@ export const defaultConfig = {
     firstRowHeader: true,
     maxRowSize: sizeOf1KB * 128,
     chunkSize: sizeOf1MB * 4,
-    maxLoadedChunks: 3,
+    maxLoadedChunks: 4,
 };
 
 export function writeOptionsToBuffer(view, ptr, options) {

@@ -8,7 +8,7 @@ let gView = null;
 let gU8View = null;
 
 async function init(options) {
-    const memorySize = (DataTools.sizeOf1MB * 32) / (DataTools.sizeOf1KB * 64);
+    const memorySize = (DataTools.sizeOf1MB * 64) / (DataTools.sizeOf1KB * 64);
     gMemory = new WebAssembly.Memory({initial: memorySize, maximum: memorySize});
     gWASM = await new WebAssembly.Instance(options.wasm, {env: { memory: gMemory }});
     gExports = gWASM.exports;
@@ -232,7 +232,7 @@ self.onmessage = async function CSVManagerWorkerOnMessage(e) {
 
         case 'loadChunk': {
             const result = await loadChunk(message.options);
-            sendSuccess(gID, result, [result.buffer])
+            sendSuccess(gID, result, [result.buffer]);
         }
             break;
 

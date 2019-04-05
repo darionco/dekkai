@@ -1,9 +1,5 @@
 import {WorkerPool} from '../workers/WorkerPool';
 
-const ROW_HAS_DANGLING_QUALIFIERS = 1;
-const ROW_MISMATCHED_COLUMN_COUNT = 2;
-const ROW_MISMATCHED_QUALIFIERS = 4;
-
 export class DataChunk {
     constructor(blob, rowOffsets, meta) {
         this.mBlob = blob;
@@ -14,13 +10,12 @@ export class DataChunk {
         this.mMeta = meta;
 
         this.mLoading = null;
+        this.mDecoder = new TextDecoder();
 
         this.mRowLength = 4;
         this.mColumnOffsets = [];
         this.mColumnLengths = [];
         this.mColumnCount = Math.floor(this.mMeta.byteLength / 24);
-
-        this.mDecoder = new TextDecoder();
 
         const metaView = new DataView(this.mMeta);
         let length;
@@ -48,8 +43,24 @@ export class DataChunk {
         return this.mBuffer !== null;
     }
 
+    get loading() {
+        return this.mLoading;
+    }
+
+    get columnCount() {
+        return this.mColumnCount;
+    }
+
+    get columnOffsets() {
+        return this.mColumnOffsets;
+    }
+
     get rowCount() {
         return this.mOffsets.length;
+    }
+
+    get rowLength() {
+        return this.mRowLength;
     }
 
     get offsets() {
@@ -77,10 +88,14 @@ export class DataChunk {
                 separator: config.separator.charCodeAt(0),
                 qualifier: config.qualifier.charCodeAt(0),
             };
-            this.mLoading = workerPool.scheduleTask('loadChunk', options).then(result => {
-                this.mBuffer = result.buffer;
-                this.mView = new DataView(this.mBuffer);
+            const loading = workerPool.scheduleTask('loadChunk', options).then(result => {
+                if (this.mLoading === loading) {
+                    this.mBuffer = result.buffer;
+                    this.mView = new DataView(this.mBuffer);
+                }
+                return this;
             });
+            this.mLoading = loading;
         }
         return this.mLoading;
     }
@@ -88,36 +103,6 @@ export class DataChunk {
     unload() {
         this.mBuffer = null;
         this.mView = null;
-    }
-
-    getRow(index, row = []) {
-        row.length = 0;
-        if (this.loaded && index < this.mRowLength) {
-            const ptr = this.mRowLength * index;
-            const state = this.mView.getUint32(ptr, true);
-
-            if (state !== 0) {
-                if (state & ROW_HAS_DANGLING_QUALIFIERS) {
-                    console.warn('Row has dangling qualifiers'); // eslint-disable-line
-                }
-
-                if (state & ROW_MISMATCHED_COLUMN_COUNT) {
-                    console.warn('Row has mismatched column count'); // eslint-disable-line
-                }
-
-                if (state & ROW_MISMATCHED_QUALIFIERS) {
-                    console.warn('Row has mismatched qualifiers'); // eslint-disable-line
-                }
-            }
-
-            let offset;
-            let length;
-            for (let i = 0; i < this.mColumnCount; ++i) {
-                offset = ptr + this.mColumnOffsets[i];
-                length = this.mView.getUint32(offset, true);
-                row.push(this.mDecoder.decode(new Uint8Array(this.mBuffer, offset + 4, length)));
-            }
-        }
-        return row;
+        this.mLoading = null;
     }
 }

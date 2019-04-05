@@ -1,4 +1,26 @@
 import {defaultConfig, readHeader, sliceFile, analyzeBlobs} from '../data/DataTools';
+import {Row} from './Row';
+
+const kStringType = {
+    name: 'string',
+    convert: str => str,
+};
+
+const kFloatType = {
+    name: 'float',
+    convert: str => parseFloat(str),
+};
+
+const kIntType = {
+    name: 'int',
+    convert: str => parseInt(str, 10),
+};
+
+const kTypes = {
+    'string': kStringType,
+    'float': kFloatType,
+    'int': kIntType,
+};
 
 const _TableImp = (function() {
     class Table {
@@ -21,9 +43,16 @@ const _TableImp = (function() {
             this.mChunks = chunks;
             this.mMeta = meta;
             this.mConfig = config;
-            this.mRowsMap = this._generateRowsMap(this.mChunks);
+            this.mRowMap = this._generateRowsMap(this.mChunks);
             this.mLoadedChunks = [];
-            this.mRegExp = new RegExp(`^${config.qualifier}(.+(?=${config.qualifier}$))${config.qualifier}$`);
+            this.mColumnTypes = [];
+            this.mColumnNameToIndex = {};
+
+            for (let i = 0, n = this.mHeader.length; i < n; ++i) {
+                const column = this.mHeader[i];
+                this.mColumnNameToIndex[column.name] = i;
+                this.setColumnType(i);
+            }
         }
 
         get rowCount() {
@@ -42,19 +71,91 @@ const _TableImp = (function() {
             return this.mHeader;
         }
 
-        async getRow(i = 0) {
-            const chunkIndex = this._getChunkForRow(i);
-            const chunk = this.mChunks[chunkIndex];
-            const rowIndex = chunkIndex === 0 ? i : i - this.mRowsMap[chunkIndex - 1];
-            if (!chunk.loaded) {
-                if (this.mLoadedChunks.length >= this.mConfig.maxLoadedChunks) {
-                    this.mLoadedChunks.shift().unload();
-                }
-                await chunk.load(this.mConfig);
-                this.mLoadedChunks.push(chunk);
+        get chunks() {
+            return this.mChunks;
+        }
+
+        get rowMap() {
+            return this.mRowMap;
+        }
+
+        get columnTypes() {
+            return this.mColumnTypes;
+        }
+
+        get columnNameToIndex() {
+            return this.mColumnNameToIndex;
+        }
+
+        setColumnType(column, type = null) {
+            if (type !== null && !kTypes.hasOwnProperty(type)) {
+                throw `Unknown type ${type}`;
             }
 
-            return chunk.getRow(rowIndex);
+            let index;
+            if (this.mColumnNameToIndex.hasOwnProperty(column)) {
+                index = this.mColumnNameToIndex[column];
+            } else {
+                index = parseInt(column, 10);
+                if (isNaN(index) || index < 0 || index >= this.mHeader.length) {
+                    throw `Unknown column: ${column}`;
+                }
+            }
+
+            if (type === null) {
+                if (column.stringCount > column.numberCount) {
+                    this.mColumnTypes.push(Object.assign({}, kStringType, {
+                        certainty: column.stringCount / this.rowCount,
+                    }));
+                } else if (column.floatCount !== 0) {
+                    this.mColumnTypes.push(Object.assign({}, kFloatType, {
+                        certainty: column.stringCount / this.rowCount,
+                    }));
+                } else {
+                    this.mColumnTypes.push(Object.assign({}, kIntType, {
+                        certainty: column.stringCount / this.rowCount,
+                    }));
+                }
+            } else {
+                this.mColumnTypes[index] = Object.assign({}, kTypes[type], {
+                    certainty: 1.0,
+                });
+            }
+        }
+
+        async getRow(i = 0) {
+            const row = new Row(this);
+            return await row.setIndex(i);
+        }
+
+        async forEach(itr) {
+            const row = new Row(this);
+            const chunkCount = this.mChunks.length;
+            const loading = [];
+            let loadIndex;
+            for (loadIndex = 0; loadIndex < this.mConfig.maxLoadedChunks && loadIndex < chunkCount; ++loadIndex) {
+                loading.push(this._loadChunk(this.mChunks[loadIndex]));
+            }
+
+            for (let i = 0, n = this.rowCount; i < n; ++i) {
+                if (row.chunkInfo && i >= row.chunkInfo.end && loadIndex < chunkCount) {
+                    this._loadChunk(this.mChunks[loadIndex++]);
+                }
+                await row.setIndex(i);
+                itr(row, i);
+            }
+        }
+
+        async _loadChunk(chunk) {
+            if (chunk.loading) {
+                return await chunk.loading;
+            }
+
+            if (this.mLoadedChunks.length >= this.mConfig.maxLoadedChunks) {
+                this.mLoadedChunks.shift().unload();
+            }
+            this.mLoadedChunks.push(chunk);
+            return await chunk.load(this.mConfig);
         }
 
         _generateRowsMap(chunks) {
@@ -65,25 +166,6 @@ const _TableImp = (function() {
                 result.push(count);
             }
             return result;
-        }
-
-        _getChunkForRow(index) {
-            let i = Math.floor(this.mChunks.length * (index / this.rowCount));
-
-            if (index < this.mRowsMap[i]) {
-                if (i === 0 || index >= this.mRowsMap[i - 1]) {
-                    return i;
-                }
-                while (i > 0 && index < this.mRowsMap[i - 1]) {
-                    --i;
-                }
-                return i;
-            }
-
-            while (index >= this.mRowsMap[i]) {
-                ++i;
-            }
-            return i;
         }
     }
 
