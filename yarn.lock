@@ -1980,10 +1980,10 @@ rollup-plugin-wasm@^3.0.0:
   resolved "https://registry.yarnpkg.com/rollup-plugin-wasm/-/rollup-plugin-wasm-3.0.0.tgz#83e30c6cd0bac8424ec096b9bd7e4e0086cb8137"
   integrity sha512-ySzhd2MtHbORJdRmpID0j1N59QpjyQ27qxo6XfEH2Pv2ckhLLiD8E1QuhLQDIIw7dXZhQYMyLRGJsiZCewTK7g==
 
-rollup-plugin-web-worker-loader@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.1.1.tgz#15e55b7633a486d14024d62935b09cd708f99bfe"
-  integrity sha512-WdQf7G+mNoECF5P6PHChoFZspL5rJRid4aocDzaKxre141SXuOxE53lUttBT0t+SQ+4ARII7T8s3dI4PMEeJaQ==
+rollup-plugin-web-worker-loader@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.1.2.tgz#d78d06170d8bf71efeddd20c6577f9542e453d32"
+  integrity sha512-6FnkMDrQ5LwfRSGiYblo5ASQItotBP0PuWrtEh467/9gGKmh7KMQROPqRAEgGiyNX/5TaDOP0AjOHMlaRUEnFQ==
 
 rollup-pluginutils@^2.3.0, rollup-pluginutils@^2.3.3:
   version "2.5.0"

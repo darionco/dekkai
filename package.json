@@ -22,7 +22,7 @@
         "rollup-plugin-node-resolve": "^4.0.1",
         "rollup-plugin-url": "^2.2.0",
         "rollup-plugin-wasm": "^3.0.0",
-        "rollup-plugin-web-worker-loader": "^0.1.1"
+        "rollup-plugin-web-worker-loader": "^0.1.2"
     },
     "dependencies": {
         "webcpu": "^0.1.0"

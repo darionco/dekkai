@@ -18,7 +18,9 @@ const config = {
     plugins: [
         resolve(),
         eslint(),
-        webWorkerLoader(),
+        webWorkerLoader({
+            sourcemap: isBrowser,
+        }),
         urlLoader({
             limit: 1024 * 1024 * 1024, // 1GB - Basically unlimited
             include: ['**/*.wasm'],
