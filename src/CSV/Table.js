@@ -38,6 +38,11 @@ const _TableImp = (function() {
             opts.toString();
         }
 
+        static async fromString(str, configuration) {
+            const blob = new Blob([str]);
+            return await this.fromFile(blob, configuration);
+        }
+
         constructor(header, chunks, meta, config) {
             this.mHeader = header;
             this.mChunks = chunks;
@@ -174,11 +179,15 @@ const _TableImp = (function() {
 
 export class Table {
     static async fromFile(file, options = null) {
-        return _TableImp.fromFile(file, options);
+        return await _TableImp.fromFile(file, options);
     }
 
     static async fromURL(url, options = null) {
-        return _TableImp.fromURL(url, options);
+        return await _TableImp.fromURL(url, options);
+    }
+
+    static async fromString(str, options = null) {
+        return await _TableImp.fromString(str, options);
     }
 
     constructor() {

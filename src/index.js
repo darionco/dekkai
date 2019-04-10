@@ -62,6 +62,11 @@ const _dekkai = (function() {
             await this.init();
             return await Table.fromURL(url, options);
         }
+
+        async loadFromString(str, options = null) {
+            await this.init();
+            return await Table.fromString(str, options);
+        }
     }
 
     return new dekkai(); // eslint-disable-line
