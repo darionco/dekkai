@@ -1,4 +1,4 @@
-import {defaultConfig, readHeader, sliceFile, analyzeBlobs} from '../data/DataTools';
+import {defaultConfig, readHeader, sliceFile, analyzeBlobs, getDecoder} from '../data/DataTools';
 import {Row} from './Row';
 
 const kStringType = {
@@ -52,6 +52,7 @@ const _TableImp = (function() {
             this.mLoadedChunks = [];
             this.mColumnTypes = [];
             this.mColumnNameToIndex = {};
+            this.mDecoder = getDecoder(this.mConfig.encoding);
 
             for (let i = 0, n = this.mHeader.length; i < n; ++i) {
                 const column = this.mHeader[i];
@@ -90,6 +91,10 @@ const _TableImp = (function() {
 
         get columnNameToIndex() {
             return this.mColumnNameToIndex;
+        }
+
+        get decoder() {
+            return this.mDecoder;
         }
 
         setColumnType(column, type = null) {

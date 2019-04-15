@@ -143,9 +143,10 @@ export class Row extends Array {
         for (let i = 0, n = this.mTable.header.length; i < n; ++i) {
             const offset = this.mChunk.columnOffsets[i];
             let length;
+            let decoder = this.mTable.decoder;
             const getBuffer = () => {
                 length = this.mChunk.view.getUint32(this.mRowOffset + offset, true);
-                return this._utf8ToStr(this.mChunk.view, this.mRowOffset + offset + 4, length);
+                return decoder(this.mChunk.view, this.mRowOffset + offset + 4, length);
             };
             let index = i;
             this.mGetters.push({
@@ -153,58 +154,5 @@ export class Row extends Array {
                 typed: () => this.mTable.columnTypes[index].convert(getBuffer()),
             });
         }
-    }
-
-    _utf8ToStr(view, offset, length) {
-        let result = '';
-        let c;
-        for (let i = 0; i < length; ++i) {
-            c = view.getUint8(offset + i);
-            switch (c >> 4) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    // 0xxxxxxx
-                    result += String.fromCharCode(c);
-                    break;
-
-                case 12:
-                case 13:
-                    // 110x xxxx   10xx xxxx
-                    result += String.fromCharCode(
-                        ((c & 0x1F) << 6) |
-                        (view.getUint8(offset + (++i)) & 0x3F)
-                    );
-                    break;
-
-                case 14:
-                    // 1110 xxxx  10xx xxxx  10xx xxxx
-                    result += String.fromCharCode(
-                        ((c & 0x0F)) << 12 |
-                        ((view.getUint8(offset + (++i)) & 0x3F) << 6) |
-                        (view.getUint8(offset + (++i)) & 0x3F)
-                    );
-                    break;
-
-                case 15:
-                    // 1111 0xxx 10xx xxxx 10xx xxxx 10xx xxxx
-                    result += String.fromCodePoint(
-                        ((c & 0x07) << 18) |
-                        ((view.getUint8(offset + (++i)) & 0x3F) << 12) |
-                        ((view.getUint8(offset + (++i)) & 0x3F) << 6) |
-                        (view.getUint8(offset + (++i)) & 0x3F));
-                    break;
-
-
-                default:
-                    break;
-            }
-        }
-        return result;
     }
 }
