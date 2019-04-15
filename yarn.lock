@@ -23,7 +23,7 @@
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.39.tgz#e177e699ee1b8c22d23174caaa7422644389509f"
   integrity sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==
 
-"@types/node@^11.13.0":
+"@types/node@^11.13.2":
   version "11.13.2"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.13.2.tgz#dc85dde46aa8740bb4aed54b8104250f8f849503"
   integrity sha512-HOtU5KqROKT7qX/itKHuTtt5fV0iXbheQvrgbLNXFJQBY/eh+VS5vmmTAVlo3qIGMsypm0G4N1t2AXjy1ZicaQ==
@@ -1975,15 +1975,10 @@ rollup-plugin-url@^2.2.0:
     mkpath "^1.0.0"
     rollup-pluginutils "^2.3.3"
 
-rollup-plugin-wasm@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-wasm/-/rollup-plugin-wasm-3.0.0.tgz#83e30c6cd0bac8424ec096b9bd7e4e0086cb8137"
-  integrity sha512-ySzhd2MtHbORJdRmpID0j1N59QpjyQ27qxo6XfEH2Pv2ckhLLiD8E1QuhLQDIIw7dXZhQYMyLRGJsiZCewTK7g==
-
-rollup-plugin-web-worker-loader@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.1.2.tgz#d78d06170d8bf71efeddd20c6577f9542e453d32"
-  integrity sha512-6FnkMDrQ5LwfRSGiYblo5ASQItotBP0PuWrtEh467/9gGKmh7KMQROPqRAEgGiyNX/5TaDOP0AjOHMlaRUEnFQ==
+rollup-plugin-web-worker-loader@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.2.0.tgz#70b46c8e460149d2bfefe9819b6f9d1e1e375e99"
+  integrity sha512-j0asYXCvg2yAEXTRuglVr+/+wKLzUnkugVRJPy3qiD+ptU0l39WyliyIVoIMZZ/2SugGbsmjTBcNh18wjB/wlQ==
 
 rollup-pluginutils@^2.3.0, rollup-pluginutils@^2.3.3:
   version "2.5.0"
@@ -1993,13 +1988,13 @@ rollup-pluginutils@^2.3.0, rollup-pluginutils@^2.3.3:
     estree-walker "^0.6.0"
     micromatch "^3.1.10"
 
-rollup@^1.9.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-1.9.0.tgz#65f7db8d312a07d4e9702316025f91df56ce9f9c"
-  integrity sha512-cNZx9MLpKFMSaObdVFeu8nXw8gfw6yjuxWjt5mRCJcBZrAJ0NHAYwemKjayvYvhLaNNkf3+kS2DKRKS5J6NRVg==
+rollup@^1.9.3:
+  version "1.9.3"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-1.9.3.tgz#c898fd562dff3165470fc5de9b5e191d50f944b2"
+  integrity sha512-20iIOjee5n3H6W6CXsVdYs2xw86j4l+LQLM6yACynt+YJCwkqaYNHAjQ/dhVBIKsFpHwPqHamn/GHq+3Zp8ybQ==
   dependencies:
     "@types/estree" "0.0.39"
-    "@types/node" "^11.13.0"
+    "@types/node" "^11.13.2"
     acorn "^6.1.1"
 
 run-async@^2.2.0:
@@ -2502,10 +2497,10 @@ vary@^1:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-webcpu@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.1.0.tgz#25846fd03df1ecd9398f594e2a57c02475ad2598"
-  integrity sha512-TujPh9Y7z/4x2NWQrJUdLOJrUwa4YT5KrsRE34Lba0R8v2DXqQsxOJgrPaDYvh2pZ2nYonCxJxatnWWVFwul9A==
+webcpu@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.2.2.tgz#760c5713365d915b4c1327128338d21066b8e32e"
+  integrity sha512-AP4TBhs5SFBzJQAdCLpmmmCA/ZlPfFa5RHsgqa2D0Ck/vGEdStUC7D1higPJoSw1/vWY9R4wm318BKHKEEF8Ug==
 
 websocket-driver@>=0.5.1:
   version "0.7.0"
