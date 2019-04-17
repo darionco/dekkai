@@ -3,6 +3,8 @@
     "version": "0.1.0",
     "description": "Modern and fast, really fast, CSV parser for the browser and node.js",
     "entry": "src/index.js",
+    "main": "dist/esm/webcpu.js",
+    "module": "dist/esm/webcpu.js",
     "author": "Dario Segura",
     "license": "MIT",
     "keywords": [
@@ -35,5 +37,8 @@
     },
     "dependencies": {
         "webcpu": "^0.3.0"
-    }
+    },
+    "files": [
+        "dist/"
+    ]
 }
