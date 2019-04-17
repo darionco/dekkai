@@ -113,17 +113,18 @@ const _TableImp = (function() {
             }
 
             if (type === null) {
-                if (column.stringCount > column.numberCount) {
+                const col = this.mHeader[index];
+                if (col.stringCount > col.numberCount) {
                     this.mColumnTypes.push(Object.assign({}, kStringType, {
-                        certainty: column.stringCount / this.rowCount,
+                        certainty: col.stringCount / this.rowCount,
                     }));
-                } else if (column.floatCount !== 0) {
+                } else if (col.floatCount !== 0) {
                     this.mColumnTypes.push(Object.assign({}, kFloatType, {
-                        certainty: column.stringCount / this.rowCount,
+                        certainty: col.numberCount / this.rowCount,
                     }));
                 } else {
                     this.mColumnTypes.push(Object.assign({}, kIntType, {
-                        certainty: column.stringCount / this.rowCount,
+                        certainty: col.numberCount / this.rowCount,
                     }));
                 }
             } else {
