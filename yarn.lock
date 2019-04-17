@@ -2497,10 +2497,10 @@ vary@^1:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-webcpu@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.2.2.tgz#760c5713365d915b4c1327128338d21066b8e32e"
-  integrity sha512-AP4TBhs5SFBzJQAdCLpmmmCA/ZlPfFa5RHsgqa2D0Ck/vGEdStUC7D1higPJoSw1/vWY9R4wm318BKHKEEF8Ug==
+webcpu@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.3.0.tgz#17243cadb251edcf8b562e52c2e1a6515c770c59"
+  integrity sha512-HF5f2z471OzWpL1wdyXX3rqRQNUjbTs+OIAIqAt24mXfn5FIgrz3RFsT1R1WVPh3/yQVl9RERbM+lFnY6iGSsw==
 
 websocket-driver@>=0.5.1:
   version "0.7.0"
