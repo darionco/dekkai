@@ -73,6 +73,65 @@
         firstRow.checked = true;
         document.body.appendChild(firstRow);
 
+        document.body.appendChild(document.createElement('br'));
+
+        let option;
+
+        const encodingTitle = document.createElement('span');
+        encodingTitle.innerText = ' File encoding: ';
+        document.body.appendChild(encodingTitle);
+
+        const encoding = document.createElement('select');
+
+        const encodings = [
+            'utf-8',
+            'utf-16',
+            'utf-16be',
+            'latin2',
+            'latin3',
+            'latin4',
+            'cyrillic',
+            'arabic',
+            'greek',
+            'hebrew',
+            'logical',
+            'latin6',
+            'iso-8859-13',
+            'iso-8859-14',
+            'latin9',
+            'iso-8859-16',
+            'koi',
+            'koi8-u',
+            'x-mac-roman',
+            'dos-874',
+            'windows-1250',
+            'windows-1251',
+            'ascii',
+            'windows-1253',
+            'latin5',
+            'windows-1255',
+            'windows-1256',
+            'windows-1257',
+            'windows-1258',
+            'x-mac-cyrillic',
+            'chinese',
+            'gb18030',
+            'hz-gb-2312',
+            'big5',
+            'euc-jp',
+            'iso-2022-jp',
+            'ms_kanji',
+            'iso-2022-kr',
+        ];
+
+        for (let i = 0; i < encodings.length; i++) {
+            option = document.createElement('option');
+            option.value = encodings[i];
+            option.innerText = encodings[i];
+            encoding.appendChild(option);
+        }
+
+        document.body.appendChild(encoding);
 
         document.body.appendChild(document.createElement('br'));
 
@@ -81,7 +140,6 @@
         document.body.appendChild(threadCountTitle);
 
         const threadCount = document.createElement('select');
-        let option;
 
         option = document.createElement('option');
         option.value = -1;
@@ -94,7 +152,6 @@
             option.innerText = i;
             threadCount.appendChild(option);
         }
-
         document.body.appendChild(threadCount);
 
         document.body.appendChild(document.createElement('br'));
@@ -121,6 +178,7 @@
                 separator: separator.value,
                 qualifier: qualifier.value,
                 firstRowHeader: firstRow.checked,
+                encoding: encoding.options[encoding.selectedIndex].value,
             });
             const time = performance.now() - start;
             let html = '';
@@ -160,7 +218,7 @@
             for (let i = 0; i < 300 && i < table.rowCount; ++i) {
                 html += '<tr>';
                 const row = await table.getRow(i);
-                console.log(row);
+                // console.log(row);
                 row.forEach(value => {
                     html += `<td>${value}</td>`;
                 });
@@ -171,7 +229,7 @@
             // let c = 0;
             // let r = 0;
             // await table.forEach((row, i) => {
-            //     r += row.valueByIndexTyped(2);
+            //     r += row.valueByIndexTyped(6);
             //     ++c;
             // });
             // console.log(`forEach took ${performance.now() - s}ms`);
@@ -185,6 +243,7 @@
 
             console.log(table);
         });
+        // dekkai.init(1);
     }
 
     document.addEventListener('DOMContentLoaded', main);
