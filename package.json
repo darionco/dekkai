@@ -1,6 +1,6 @@
 {
     "name": "dekkai",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "Modern and fast, really fast, CSV parser for the browser and node.js",
     "entry": "src/index.js",
     "author": "Dario Segura",
