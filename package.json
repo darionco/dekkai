@@ -10,6 +10,7 @@
         "build:dev": "rollup --config",
         "wasm": "emcc src/wasm/src/*.c -O3 -s WASM=1 -o src/wasm/bin/Parser.wasm -s TOTAL_MEMORY=1048576 -s TOTAL_STACK=0 -s WASM_MEM_MAX=1073741824 && wasm2wat src/wasm/bin/Parser.wasm -o src/wasm/bin/Parser.wat",
         "start": "cross-env TARGET='browser' rollup --config --watch",
+        "watch": "rollup --config --watch",
         "prepublishOnly": "npm-run-all build"
     },
     "devDependencies": {
