@@ -5,6 +5,14 @@
     "entry": "src/index.js",
     "author": "Dario Segura",
     "license": "MIT",
+    "keywords": [
+        "csv",
+        "parser",
+        "node",
+        "browser",
+        "fast",
+        "wasm",
+    ],
     "scripts": {
         "docs": "documentation build src/** -f md -o README.md --markdown-toc false",
         "build": "npm-run-all --parallel build:**",
