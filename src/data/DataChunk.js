@@ -10,7 +10,6 @@ export class DataChunk {
         this.mMeta = meta;
 
         this.mLoading = null;
-        this.mDecoder = new TextDecoder();
 
         this.mRowLength = 4;
         this.mColumnOffsets = [];
