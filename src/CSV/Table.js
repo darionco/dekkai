@@ -1,4 +1,5 @@
-import {defaultConfig, readHeader, sliceFile, analyzeBlobs, getDecoder} from '../data/DataTools';
+import {defaultConfig, readHeader, sliceFile, analyzeBlobs, getDecoder, wrapNodeFile} from '../data/DataTools';
+import {DataFile} from '../data/DataFile';
 import {Row} from './Row';
 
 const kStringType = {
@@ -25,9 +26,10 @@ const kTypes = {
 const _TableImp = (function() {
     class Table {
         static async fromFile(file, configuration) {
+            const dataFile = new DataFile(file);
             const config = Object.freeze(Object.assign({}, defaultConfig, configuration));
-            const {header, offset} = await readHeader(file, config);
-            const blobs = await sliceFile(file, offset, config);
+            const {header, offset} = await readHeader(dataFile, config);
+            const blobs = await sliceFile(dataFile, offset, config);
             const analyzed = await analyzeBlobs(blobs, header, config);
 
             return new Table(header, analyzed.chunks, analyzed.meta, config);
@@ -36,6 +38,7 @@ const _TableImp = (function() {
         static async fromURL(url, configuration) {
             const opts = Object.assign({}, defaultConfig, configuration);
             opts.toString();
+            throw 'Not implemented yet';
         }
 
         static async fromString(str, configuration) {

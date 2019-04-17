@@ -1,4 +1,8 @@
 import * as DataTools from '../data/DataTools';
+import {DataFile} from '../data/DataFile';
+
+const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
+const _self = kIsNodeJS ? require('worker_threads').parentPort : self; // eslint-disable-line
 
 let gID = null;
 let gWASM = null;
@@ -23,8 +27,9 @@ async function calculateOffsets(options) {
     const maxRowSize = options.maxRowSize;
     const start = Math.max(options.end - maxRowSize, 0);
     const end = options.end + maxRowSize >= options.file.size ? options.end : options.end + maxRowSize;
-    const blob = options.file.slice(start, end);
-    const buffer = await DataTools.loadBlob(blob);
+    const dataFile = DataFile.deserialize(options.file);
+    const blob = dataFile.slice(start, end);
+    const buffer = await blob.load();
 
     const bufferPtr = 4;
     const optionsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
@@ -55,7 +60,8 @@ async function calculateOffsets(options) {
 }
 
 async function analyzeBlob(options) {
-    const buffer = await DataTools.loadBlob(options.blob);
+    const blob = DataFile.deserializeBlob(options.blob);
+    const buffer = await blob.load();
 
     const bufferPtr = 4;
     const optionsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
@@ -150,7 +156,8 @@ async function analyzeBlob(options) {
 }
 
 async function loadChunk(options) {
-    const buffer = await DataTools.loadBlob(options.blob);
+    const blob = DataFile.deserializeBlob(options.blob);
+    const buffer = await blob.load();
 
     const bufferPtr = 4;
     gU8View.set(new Uint8Array(buffer), bufferPtr);
@@ -197,22 +204,24 @@ async function loadChunk(options) {
 }
 
 function sendError(id, reason) {
-    self.postMessage({
+    const message = {
         type: 'error',
         id,
         reason,
-    });
+    };
+    _self.postMessage(kIsNodeJS ? { data: message } : message);
 }
 
 function sendSuccess(id, data = null, transferable = null) {
-    self.postMessage({
+    const message = {
         type: 'success',
         id,
         data,
-    }, transferable);
+    };
+    _self.postMessage(kIsNodeJS ? { data: message } : message, transferable);
 }
 
-self.onmessage = async function CSVManagerWorkerOnMessage(e) {
+(_self.on || _self.addEventListener).call(_self, 'message', async function CSVManagerWorkerOnMessage(e) {
     const message = e.data;
     switch (message.type) {
         case 'init':
@@ -237,11 +246,14 @@ self.onmessage = async function CSVManagerWorkerOnMessage(e) {
             break;
 
         case 'close':
-            self.close();
+            _self.close();
+            if (kIsNodeJS) {
+                process.exit(); // eslint-disable-line
+            }
             break;
 
         default:
             sendError(gID, `Unrecognized message type "${message.type}"`);
             break;
     }
-};
+});

@@ -11,7 +11,7 @@ export const defaultConfig = {
     firstRowHeader: true,
     maxRowSize: sizeOf1KB * 128,
     chunkSize: sizeOf1MB * 4,
-    maxLoadedChunks: 4,
+    maxLoadedChunks: 32,
     encoding: 'utf8',
 };
 
@@ -74,8 +74,8 @@ export function readRow(view, offset, result, config = defaultConfig) {
 }
 
 export async function readHeader(file, config = defaultConfig) {
-    const blob = file.slice(0, Math.min(config.maxRowSize, file.size));
-    const buffer = await loadBlob(blob);
+    const chunk = file.slice(0, Math.min(config.maxRowSize, file.size));
+    const buffer = await chunk.load();
 
     const view = new DataView(buffer);
     const columns = [];
@@ -271,10 +271,7 @@ export function getDecoder(encoding) {
 
         default: {
             const decoder = new TextDecoder(lc);
-            return (view, offset, length) => {
-                return decoder.decode(new Uint8Array(view.buffer, offset, length));
-            };
+            return (view, offset, length) => decoder.decode(new Uint8Array(view.buffer, offset, length));
         }
     }
-
 }

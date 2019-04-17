@@ -1,3 +1,6 @@
+/* handle running in node.js */
+const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
+
 export class WorkerPool {
     static get sharedInstance() {
         return kSharedInstance; // eslint-disable-line
@@ -57,9 +60,11 @@ export class WorkerPool {
     }
 
     _executeTask(worker, type, options, transferable, resolve, reject) {
-        worker.onmessage = e => {
+        const addListener = worker.addEventListener || worker.on;
+        const removeListener = worker.removeEventListener || worker.off;
+        const handler = e => {
             const message = e.data;
-            worker.onmessage = null;
+            removeListener.call(worker, 'message', handler);
 
             if (message.type === 'success') {
                 resolve(message.data);
@@ -71,11 +76,13 @@ export class WorkerPool {
 
             this._executeTaskFromQueue(worker);
         };
+        addListener.call(worker, 'message', handler);
 
-        worker.postMessage({
+        const message = {
             type,
             options,
-        }, transferable);
+        };
+        worker.postMessage(kIsNodeJS ? { data: message } : message, transferable);
     }
 
     _executeTaskFromQueue(worker) {
