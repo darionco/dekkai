@@ -1975,10 +1975,10 @@ rollup-plugin-url@^2.2.0:
     mkpath "^1.0.0"
     rollup-pluginutils "^2.3.3"
 
-rollup-plugin-web-worker-loader@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.2.0.tgz#70b46c8e460149d2bfefe9819b6f9d1e1e375e99"
-  integrity sha512-j0asYXCvg2yAEXTRuglVr+/+wKLzUnkugVRJPy3qiD+ptU0l39WyliyIVoIMZZ/2SugGbsmjTBcNh18wjB/wlQ==
+rollup-plugin-web-worker-loader@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.3.1.tgz#590488a567e9c66808089f9c4f1cd3ea08172655"
+  integrity sha512-/o9LDp96r7vINvW+N9zn101u28brzOk/f4q15SinvBICKTaRNGgbo7cB3SBK5JgCrX8oye+Z5zsocFf7i05RNQ==
 
 rollup-pluginutils@^2.3.0, rollup-pluginutils@^2.3.3:
   version "2.5.0"

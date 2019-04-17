@@ -21,9 +21,9 @@
         "rollup-plugin-live-server": "^1.0.1",
         "rollup-plugin-node-resolve": "^4.0.1",
         "rollup-plugin-url": "^2.2.0",
-        "rollup-plugin-web-worker-loader": "^0.2.0"
+        "rollup-plugin-web-worker-loader": "^0.3.1"
     },
     "dependencies": {
-        "webcpu": "^0.2.2"
+        "webcpu": "^0.3.0"
     }
 }
