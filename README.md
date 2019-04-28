@@ -73,7 +73,7 @@ await table.forEach(row => {
     console.log(row.valueByName('Origin_city')); // get a value by column name
     console.log(row.valueByNameTyped('Passengers')); // parse the value as its type
     console.log(row.valueByIndex(0)); // get a value by column index
-    console.log(row.valueByNameTyped(6)); // parse the value as its type
+    console.log(row.valueByIndexTyped(6)); // parse the value as its type
 });
 
 /* get arbitrary row numbers */
