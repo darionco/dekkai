@@ -16,7 +16,7 @@ npm install dekkai
 #### Loading a file
 In the browser:
 ```javascript
-import {dekkai} from 'dekkai';
+import dekkai from 'dekkai';
 
 async function main() {
     const fileInput = document.createElement('input');
