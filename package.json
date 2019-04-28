@@ -3,8 +3,8 @@
     "version": "0.1.0",
     "description": "Modern and fast, really fast, CSV parser for the browser and node.js",
     "entry": "src/index.js",
-    "main": "dist/esm/webcpu.js",
-    "module": "dist/esm/webcpu.js",
+    "main": "dist/esm/dekkai.js",
+    "module": "dist/esm/dekkai.js",
     "author": "Dario Segura",
     "license": "MIT",
     "keywords": [
@@ -33,10 +33,10 @@
         "rollup-plugin-live-server": "^1.0.1",
         "rollup-plugin-node-resolve": "^4.0.1",
         "rollup-plugin-url": "^2.2.0",
-        "rollup-plugin-web-worker-loader": "^0.3.1"
+        "rollup-plugin-web-worker-loader": "^0.4.0"
     },
     "dependencies": {
-        "webcpu": "^0.3.0"
+        "webcpu": "^0.4.0"
     },
     "files": [
         "dist/"
