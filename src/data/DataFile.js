@@ -2,7 +2,8 @@ import {loadBlob} from './DataTools';
 
 /* handle running in node.js */
 const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
-const fs = kIsNodeJS ? require('fs') : null; // eslint-disable-line
+const kRequire = kIsNodeJS ? module.require : null; // eslint-disable-line
+const fs = kIsNodeJS ? kRequire('fs') : null; // eslint-disable-line
 
 class NodeChunk {
     constructor(file, start, end) {

@@ -2,7 +2,8 @@ import * as DataTools from '../data/DataTools';
 import {DataFile} from '../data/DataFile';
 
 const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
-const _self = kIsNodeJS ? require('worker_threads').parentPort : self; // eslint-disable-line
+const kRequire = kIsNodeJS ? module.require : null; // eslint-disable-line
+const _self = kIsNodeJS ? kRequire('worker_threads').parentPort : self; // eslint-disable-line
 
 let gID = null;
 let gWASM = null;
