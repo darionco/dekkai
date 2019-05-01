@@ -200,6 +200,6 @@ export class Table {
     }
 
     constructor() {
-        throw 'ERROR: Table constructor cannot be called directlyZ';
+        throw 'ERROR: Table constructor cannot be called directly.';
     }
 }
