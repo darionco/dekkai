@@ -28,6 +28,14 @@ export class WorkerPool {
         return this.mTasks.length || this.mIdleWorkers.length !== this.mWorkers.length;
     }
 
+    killWorkers() {
+        for (let i = 0, n = this.mWorkers.length; i < n; ++i) {
+            this.mWorkers[i].terminate();
+        }
+        this.mWorkers.length = 0;
+        this.mIdleWorkers.length = 0;
+    }
+
     scheduleTask(type, options, transferable = null) {
         return new Promise((resolve, reject) => {
             if (this.mIdleWorkers.length) {

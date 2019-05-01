@@ -75,7 +75,7 @@ const _dekkai = (function() {
         }
 
         terminate() {
-            WorkerPool.sharedInstance.workers.forEach(worker => worker.terminate());
+            WorkerPool.sharedInstance.killWorkers();
             this[initializedSymbol] = null;
         }
 
