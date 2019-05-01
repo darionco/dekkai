@@ -39,6 +39,7 @@
         "webcpu": "^0.4.0"
     },
     "files": [
-        "dist/"
+        "dist/",
+        "src/"
     ]
 }
