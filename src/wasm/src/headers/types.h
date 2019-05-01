@@ -81,6 +81,14 @@ typedef struct
 } 
 AnalyzeBufferLocals;
 
+typedef struct
+{
+    uint32 columnIndex;
+    uint32 columnOffset;
+    uint32 rowOffset;
+}
+ToBinaryLocals;
+
 typedef enum 
 {
     STARTING_QUALIFIER,
@@ -112,6 +120,25 @@ typedef struct
     byte *rows;
 }
 LoadChunkOptions;
+
+typedef struct
+{
+    byte *buffer;
+    uint32 bufferLength;
+
+    uint32 *columnLengths;
+    uint32 *columnOffsets;
+    uint32 *columnTypes;
+    uint32 columnCount;
+
+    uint32 rowLength;
+    uint32 rowCount;
+
+    SpecialChars specialChars;
+
+    byte *rows;
+}
+ToBinaryOptions;
 
 typedef enum
 {

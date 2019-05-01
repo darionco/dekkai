@@ -99,6 +99,34 @@ export class DataChunk {
         return this.mLoading;
     }
 
+    toBinary(config) {
+        const workerPool = WorkerPool.sharedInstance;
+        const options = {
+            blob: this.mBlob,
+
+            columnLengths: config.columnLengths,
+            columnOffsets: config.columnOffsets,
+            columnTypes: config.columnTypes,
+            columnCount: config.columnCount,
+
+            rowLength: config.rowLength,
+            rowCount: this.rowCount,
+
+            linebreak: config.linebreak.charCodeAt(0),
+            separator: config.separator.charCodeAt(0),
+            qualifier: config.qualifier.charCodeAt(0),
+        };
+
+        const promises = [];
+
+        const promise = workerPool.scheduleTask('convertToBinary', options).then(result => {
+            console.log(result);
+        });
+        promises.push(promise);
+
+        return Promise.all(promises);
+    }
+
     unload() {
         this.mBuffer = null;
         this.mView = null;

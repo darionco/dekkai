@@ -34,22 +34,22 @@ void findClosestLineBreak(FindClosestLineBreakOptions *opts)
     if (forward == 0 && backward == 0)
     {
         opts->result = 0;
-    } 
+    }
     else if (forward == 0)
     {
         opts->result = backward;
-    } 
+    }
     else if (backward == 0)
     {
         opts->result = forward;
-    } 
+    }
     else
     {
         opts->result = forward < abs(backward) ? forward : backward;
     }
 }
 
-void analyzeBuffer(AnalyzeBufferOptions *opts) 
+void analyzeBuffer(AnalyzeBufferOptions *opts)
 {
     /* calculate result pointer offsets */
     AnalyzeBufferResult *result = (AnalyzeBufferResult*)(opts + 1);
@@ -72,7 +72,7 @@ void analyzeBuffer(AnalyzeBufferOptions *opts)
 
     self->isNumber = 1;
 
-    for (int i = 0; i < opts->columnCount; ++i) 
+    for (int i = 0; i < opts->columnCount; ++i)
     {
         columns[i].minLength = 0xffffffff;
     }
@@ -85,7 +85,7 @@ void analyzeBuffer(AnalyzeBufferOptions *opts)
     byte* end = ptr + opts->length;
 
     /* iterate through the buffer */
-    for (; ptr < end; ++ptr) 
+    for (; ptr < end; ++ptr)
     {
         /* increase the row length */
         ++self->rowLength;
@@ -131,7 +131,7 @@ void analyzeBuffer(AnalyzeBufferOptions *opts)
         }
     }
 
-    if (self->rowLength) 
+    if (self->rowLength)
     {
         /* column calculation */
         computeColumnDescriptor(self, opts, result);
@@ -169,7 +169,7 @@ void loadChunk(LoadChunkOptions *opts) {
     CharGroup type;
 
     /* iterate through the buffer */
-    for (; ptr < end; ++ptr) 
+    for (; ptr < end; ++ptr)
     {
         /* increase the row length */
         ++self->rowLength;
@@ -202,7 +202,7 @@ void loadChunk(LoadChunkOptions *opts) {
                 /* column calculation */
                 *columnLength = self->columnLength;
                 self->columnLength = 0;
-                
+
                 ++self->columnIndex;
                 if (self->columnIndex < opts->columnCount) {
                     columnLength = (uint32*)(columnStart + opts->columnOffsets[self->columnIndex]);
@@ -236,7 +236,7 @@ void loadChunk(LoadChunkOptions *opts) {
         }
     }
 
-    if (self->rowLength) 
+    if (self->rowLength)
     {
         /* column calculation */
         if (self->columnIndex < opts->columnCount) {
@@ -248,4 +248,30 @@ void loadChunk(LoadChunkOptions *opts) {
 
         ++rowCount;
     }
+}
+
+void toBinary(ToBinaryOptions *options) {
+    AnalyzeBufferLocals *self = (AnalyzeBufferLocals*)(opts + 1);
+    opts->rows = (byte*)(self + 1);
+
+    clearMemory((uint32*)self, (uint32*)opts->rows);
+
+    /* get a ponter to the buffer and its end for iteration */
+    byte* ptr = opts->buffer;
+    byte* end = ptr + opts->bufferLength;
+
+    /* pointers to result */
+    uint32 *rowStatus;
+    uint32 *columnLength;
+    byte *columnContent;
+    byte *columnStart;
+
+    /* initialize the pointers */
+    columnStart = opts->rows;
+    rowStatus = (uint32*)columnStart;
+    columnLength = (uint32*)(columnStart + opts->columnOffsets[0]);
+    columnContent = columnStart + opts->columnOffsets[0] + 4;
+
+    /* count the rows */
+    uint32 rowCount = 0;
 }

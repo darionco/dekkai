@@ -204,6 +204,58 @@ async function loadChunk(options) {
     };
 }
 
+async function convertToBinary(options) {
+    const blob = DataFile.deserializeBlob(options.blob);
+    const buffer = await blob.load();
+
+    const bufferPtr = 4;
+    gU8View.set(new Uint8Array(buffer), bufferPtr);
+
+    const columnLengthsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
+    for (let i = 0; i < options.columnCount; ++i) {
+        gView.setUint32(columnLengthsPtr + 4 * i, options.columnLengths[i], true);
+    }
+
+    const columnOffsetsPtr = columnLengthsPtr + options.columnCount * 4;
+    for (let i = 0; i < options.columnCount; ++i) {
+        gView.setUint32(columnOffsetsPtr + 4 * i, options.columnOffsets[i], true);
+    }
+
+    const columnTypesPtr = columnLengthsPtr + options.columnCount * 4;
+    for (let i = 0; i < options.columnCount; ++i) {
+        gView.setUint32(columnTypesPtr + 4 * i, options.columnTypes[i], true);
+    }
+
+    const optionsPtr = columnOffsetsPtr + options.columnCount * 4;
+    const optionsArr = [
+        bufferPtr,
+        buffer.byteLength,
+
+        columnLengthsPtr,
+        columnOffsetsPtr,
+        columnTypesPtr,
+        options.columnCount,
+
+        options.rowLength,
+        options.rowCount,
+
+        options.linebreak,
+        options.separator,
+        options.qualifier,
+
+        // 0,
+    ];
+    DataTools.writeOptionsToBuffer(gView, optionsPtr, optionsArr);
+
+    gExports._toBinary(optionsPtr);
+
+    const rowsPtr = gView.getUint32(optionsPtr + optionsArr.length * 4, true);
+
+    const result = gMemory.buffer.slice(rowsPtr, rowsPtr + options.rowLength * options.rowCount);
+
+    return result;
+}
+
 function sendError(id, reason) {
     const message = {
         type: 'error',
@@ -243,6 +295,12 @@ function sendSuccess(id, data = null, transferable = null) {
         case 'loadChunk': {
             const result = await loadChunk(message.options);
             sendSuccess(gID, result, [result.buffer]);
+        }
+            break;
+
+        case 'convertToBinary': {
+            const result = await convertToBinary(message.options);
+            sendSuccess(gID, result, [result]);
         }
             break;
 

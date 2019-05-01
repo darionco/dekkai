@@ -454,97 +454,8 @@
     local.get 3
     i32.const 4
     i32.add)
-  (func (;6;) (type 2) (param i32 i32)
-    (local i32)
-    local.get 1
-    i32.load8_s
-    local.tee 2
-    i32.const 255
-    i32.and
-    i32.const -48
-    i32.add
-    i32.const 10
-    i32.lt_u
-    if  ;; label = @1
-      local.get 0
-      local.get 0
-      i32.load offset=24
-      i32.const 0
-      i32.ne
-      i32.store offset=24
-      return
-    end
-    local.get 2
-    i32.const 46
-    i32.eq
-    if  ;; label = @1
-      local.get 0
-      i32.load offset=28
-      i32.eqz
-      if  ;; label = @2
-        local.get 0
-        i32.const 1
-        i32.store offset=28
-        return
-      end
-    end
-    block  ;; label = @1
-      local.get 0
-      i32.load offset=4
-      if  ;; label = @2
-        block  ;; label = @3
-          block  ;; label = @4
-            block  ;; label = @5
-              block  ;; label = @6
-                local.get 2
-                i32.const 13
-                i32.sub
-                br_table 2 (;@4;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 1 (;@5;) 3 (;@3;) 1 (;@5;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 0 (;@6;) 3 (;@3;)
-              end
-              local.get 0
-              i32.load offset=36
-              br_if 4 (;@1;)
-              local.get 0
-              i32.const 1
-              i32.store offset=36
-              return
-            end
-            local.get 1
-            i32.const -1
-            i32.add
-            i32.load8_s
-            i32.const 101
-            i32.ne
-            br_if 3 (;@1;)
-            local.get 0
-            i32.load offset=40
-            br_if 3 (;@1;)
-            local.get 0
-            i32.const 1
-            i32.store offset=40
-            return
-          end
-          return
-        end
-      else
-        block  ;; label = @3
-          block  ;; label = @4
-            local.get 2
-            i32.const 13
-            i32.sub
-            br_table 0 (;@4;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 1 (;@3;) 3 (;@1;)
-          end
-          return
-        end
-        local.get 0
-        i32.const 1
-        i32.store offset=32
-        return
-      end
-    end
-    local.get 0
-    i32.const 0
-    i32.store offset=24)
+  (func (;6;) (type 0) (param i32)
+    nop)
   (func (;7;) (type 0) (param i32)
     (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
     local.get 0
@@ -1011,7 +922,7 @@
           end
           local.get 2
           local.get 1
-          call 6
+          call 11
           local.get 0
           local.get 0
           i32.load offset=60
@@ -1331,6 +1242,98 @@
     local.get 4
     local.get 2
     i32.sub)
+  (func (;11;) (type 2) (param i32 i32)
+    (local i32)
+    local.get 1
+    i32.load8_s
+    local.tee 2
+    i32.const 255
+    i32.and
+    i32.const -48
+    i32.add
+    i32.const 10
+    i32.lt_u
+    if  ;; label = @1
+      local.get 0
+      local.get 0
+      i32.load offset=24
+      i32.const 0
+      i32.ne
+      i32.store offset=24
+      return
+    end
+    local.get 2
+    i32.const 46
+    i32.eq
+    if  ;; label = @1
+      local.get 0
+      i32.load offset=28
+      i32.eqz
+      if  ;; label = @2
+        local.get 0
+        i32.const 1
+        i32.store offset=28
+        return
+      end
+    end
+    block  ;; label = @1
+      local.get 0
+      i32.load offset=4
+      if  ;; label = @2
+        block  ;; label = @3
+          block  ;; label = @4
+            block  ;; label = @5
+              block  ;; label = @6
+                local.get 2
+                i32.const 13
+                i32.sub
+                br_table 2 (;@4;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 1 (;@5;) 3 (;@3;) 1 (;@5;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 3 (;@3;) 0 (;@6;) 3 (;@3;)
+              end
+              local.get 0
+              i32.load offset=36
+              br_if 4 (;@1;)
+              local.get 0
+              i32.const 1
+              i32.store offset=36
+              return
+            end
+            local.get 1
+            i32.const -1
+            i32.add
+            i32.load8_s
+            i32.const 101
+            i32.ne
+            br_if 3 (;@1;)
+            local.get 0
+            i32.load offset=40
+            br_if 3 (;@1;)
+            local.get 0
+            i32.const 1
+            i32.store offset=40
+            return
+          end
+          return
+        end
+      else
+        block  ;; label = @3
+          block  ;; label = @4
+            local.get 2
+            i32.const 13
+            i32.sub
+            br_table 0 (;@4;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 3 (;@1;) 1 (;@3;) 3 (;@1;)
+          end
+          return
+        end
+        local.get 0
+        i32.const 1
+        i32.store offset=32
+        return
+      end
+    end
+    local.get 0
+    i32.const 0
+    i32.store offset=24)
   (export "_analyzeBuffer" (func 8))
   (export "_findClosestLineBreak" (func 9))
-  (export "_loadChunk" (func 7)))
+  (export "_loadChunk" (func 7))
+  (export "_toBinary" (func 6)))

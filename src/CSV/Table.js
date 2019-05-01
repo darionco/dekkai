@@ -3,16 +3,19 @@ import {DataFile} from '../data/DataFile';
 import {Row} from './Row';
 
 const kStringType = {
+    bin: 0,
     name: 'string',
     convert: str => str,
 };
 
 const kFloatType = {
+    bin: 1,
     name: 'float',
     convert: str => parseFloat(str),
 };
 
 const kIntType = {
+    bin: 2,
     name: 'int',
     convert: str => parseInt(str, 10),
 };
@@ -137,6 +140,34 @@ const _TableImp = (function() {
             }
         }
 
+        async convertToBinary() {
+            const binary = [];
+            const promises = [];
+            const config = Object.assign({} ,
+                this.mConfig,
+                this._binaryLengths(),
+                {
+                    columnTypes: this._binaryColumnTypes(),
+                    columnCount: this.mHeader.length,
+                }
+            );
+            const binaryBuffer = new ArrayBuffer(config.rowLength * this.rowCount);
+
+            for (let i = 0, n = this.mChunks.length; i < n; ++i) {
+                const index = i;
+                const promise = this.mChunks[index].toBinary(config).then(result => {
+                    binary[index] = result;
+                    // add to the binary buffer instead
+                });
+                promises.push(promise);
+            }
+
+            await Promise.all(promises);
+            console.log(binary);
+
+            return null;
+        }
+
         async getRow(i = 0) {
             const row = new Row(this);
             return await row.setIndex(i);
@@ -179,6 +210,32 @@ const _TableImp = (function() {
                 count += chunks[i].rowCount;
                 result.push(count);
             }
+            return result;
+        }
+
+        _binaryColumnTypes() {
+            return this.mColumnTypes.map(type => type.bin);
+        }
+
+        _binaryLengths() {
+            const result = {
+                columnLengths: [],
+                columnOffsets: [],
+                rowLength: 0,
+            };
+
+            let size;
+            for (let i = 0, n = this.mColumnTypes.length; i < n; ++i) {
+                if (this.mColumnTypes[i].bin === kStringType.bin) {
+                    size = (Math.min(this.mHeader[i].maxLength, 255) + 4) & ~0x03;
+                } else {
+                    size = 4;
+                }
+                result.columnLengths.push(size);
+                result.columnOffsets.push(result.rowLength);
+                result.rowLength += size;
+            }
+
             return result;
         }
     }
