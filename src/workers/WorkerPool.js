@@ -53,6 +53,8 @@ export class WorkerPool {
     }
 
     addWorker(worker, initMessage = null) {
+        this.mWorkers.push(worker);
+
         if (initMessage) {
             return new Promise((resolve, reject) => {
                 const addListener = worker.addEventListener || worker.on;
@@ -63,7 +65,6 @@ export class WorkerPool {
                     removeListener.call(worker, 'message', handler);
 
                     if (message.type === 'success') {
-                        this.mWorkers.push(worker);
                         this._executeTaskFromQueue(worker);
                         resolve();
                     } else if (message.type === 'error') {
@@ -77,7 +78,6 @@ export class WorkerPool {
             });
         }
 
-        this.mWorkers.push(worker);
         this._executeTaskFromQueue(worker);
         return Promise.resolve();
     }
