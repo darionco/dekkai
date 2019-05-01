@@ -41,33 +41,16 @@ const _dekkai = (function() {
 
                     const promises = [];
                     for (let i = 0; i < threads; ++i) {
-                        promises.push(new Promise( (resolve, reject) => {
-                            const worker = new Worker();
-                            const addListener = worker.addEventListener || worker.on;
-                            const removeListener = worker.removeEventListener || worker.off;
-                            const handler = e => {
-                                removeListener.call(worker, 'message', handler);
-                                const message = e.data;
-                                if (message.type === 'error') {
-                                    reject(message);
-                                } else {
-                                    resolve(worker);
-                                }
-                            };
-                            addListener.call(worker, 'message', handler);
-                            const message = {
-                                type: 'init',
-                                options: {
-                                    id: i,
-                                    wasm: wasmModule,
-                                },
-                            };
-                            worker.postMessage(kIsNodeJS ? { data: message } : message);
-                        }));
+                        const promise = WorkerPool.sharedInstance.addWorker(new Worker(), {
+                            type: 'init',
+                            options: {
+                                id: i,
+                                wasm: wasmModule,
+                            },
+                        });
+                        promises.push(promise);
                     }
-
-                    const workers = await Promise.all(promises).catch(reason => { throw reason; });
-                    workers.forEach(worker => WorkerPool.sharedInstance.addWorker(worker));
+                    await Promise.all(promises);
                     done(this);
                 });
             }

@@ -52,9 +52,34 @@ export class WorkerPool {
         });
     }
 
-    addWorker(worker) {
+    addWorker(worker, initMessage = null) {
+        if (initMessage) {
+            return new Promise((resolve, reject) => {
+                const addListener = worker.addEventListener || worker.on;
+                const removeListener = worker.removeEventListener || worker.off;
+
+                const handler = e => {
+                    const message = e.data;
+                    removeListener.call(worker, 'message', handler);
+
+                    if (message.type === 'success') {
+                        this.mWorkers.push(worker);
+                        this._executeTaskFromQueue(worker);
+                        resolve();
+                    } else if (message.type === 'error') {
+                        reject(message.reason);
+                    } else {
+                        reject(`ERROR: Unrecognized message type sent from data worker "${message.type}"`);
+                    }
+                };
+                addListener.call(worker, 'message', handler);
+                worker.postMessage(kIsNodeJS ? { data: initMessage } : initMessage);
+            });
+        }
+
         this.mWorkers.push(worker);
         this._executeTaskFromQueue(worker);
+        return Promise.resolve();
     }
 
     removeWorker() {
