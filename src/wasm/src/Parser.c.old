@@ -4,6 +4,26 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+void initializeParserStates(byte *location)
+{
+    uint32 *length = (uint32*)location;
+    *length = sizeof(ParserFunc) * PARSER_STATE_SIZE;
+
+    byte *start = (byte*)length + 1;
+    byte *end = location + *length;
+
+    clearMemory((uint32*)start, (uint32*)end);
+
+    ParserFunc *parserState = (ParserFunc*)start;
+
+    parserState[PARSER_SEARCHING] = &parser_searching;
+}
+
+void parser_searching(ParserLocals *arg)
+{
+
+}
+
 void findClosestLineBreak(FindClosestLineBreakOptions *opts)
 {
     int32 forward = 0;
@@ -46,6 +66,55 @@ void findClosestLineBreak(FindClosestLineBreakOptions *opts)
     else
     {
         opts->result = forward < abs(backward) ? forward : backward;
+    }
+}
+
+void loadBuffer(LoadBufferOptions *opts)
+{
+    /* calculate result pointer offsets */
+    LoadBufferResult *result = (LoadBufferResult*)(opts + 1);
+    LoadBufferStats *stats = &result->stats;
+    LoadBufferLocals *self = (LoadBufferLocals*)(result + 1);
+    ColumnDescriptor *columns = (ColumnDescriptor*)(self + 1);
+    byte *data = (byte*)(columns + opts->columnCount);
+    byte *rows = data + opts->length;
+
+    /* clear the values (there might be garbage in them) */
+    clearMemory((uint32*)result, (uint32*)data);
+
+    /* save the offsets to memory */
+    result->columns = columns;
+    result->data = data;
+    result->rows = rows;
+    opts->result = result;
+
+    /* initialize relevant values */
+    stats->minRowLength = 0xffffffff;
+    stats->sizeOfColumn = sizeof(ColumnDescriptor);
+    stats->dataLength = 0;
+    stats->rowsLength = 0;
+    self->state = PARSER_SEARCHING;
+
+    for (int i = 0; i < opts->columnCount; ++i)
+    {
+        columns[i].minLength = 0xffffffff;
+    }
+
+    /* local variables */
+    CharGroup type;
+
+    /* get a ponter to the buffer and its end for iteration */
+    byte* ptr = opts->buffer;
+    byte* end = ptr + opts->length;
+
+    RowInfo *rowInfo;
+    ColumnInfo *columnInfo;
+
+    /* iterate through the buffer */
+    for (; ptr < end; ++ptr)
+    {
+        /* parse the character type */
+        // type = parseCharGroup(self, &opts->specialChars, ptr, end);
     }
 }
 
@@ -251,27 +320,27 @@ void loadChunk(LoadChunkOptions *opts) {
 }
 
 void toBinary(ToBinaryOptions *options) {
-    AnalyzeBufferLocals *self = (AnalyzeBufferLocals*)(opts + 1);
-    opts->rows = (byte*)(self + 1);
+    // AnalyzeBufferLocals *self = (AnalyzeBufferLocals*)(opts + 1);
+    // opts->rows = (byte*)(self + 1);
 
-    clearMemory((uint32*)self, (uint32*)opts->rows);
+    // clearMemory((uint32*)self, (uint32*)opts->rows);
 
-    /* get a ponter to the buffer and its end for iteration */
-    byte* ptr = opts->buffer;
-    byte* end = ptr + opts->bufferLength;
+    // /* get a ponter to the buffer and its end for iteration */
+    // byte* ptr = opts->buffer;
+    // byte* end = ptr + opts->bufferLength;
 
-    /* pointers to result */
-    uint32 *rowStatus;
-    uint32 *columnLength;
-    byte *columnContent;
-    byte *columnStart;
+    // /* pointers to result */
+    // uint32 *rowStatus;
+    // uint32 *columnLength;
+    // byte *columnContent;
+    // byte *columnStart;
 
-    /* initialize the pointers */
-    columnStart = opts->rows;
-    rowStatus = (uint32*)columnStart;
-    columnLength = (uint32*)(columnStart + opts->columnOffsets[0]);
-    columnContent = columnStart + opts->columnOffsets[0] + 4;
+    // /* initialize the pointers */
+    // columnStart = opts->rows;
+    // rowStatus = (uint32*)columnStart;
+    // columnLength = (uint32*)(columnStart + opts->columnOffsets[0]);
+    // columnContent = columnStart + opts->columnOffsets[0] + 4;
 
-    /* count the rows */
-    uint32 rowCount = 0;
+    // /* count the rows */
+    // uint32 rowCount = 0;
 }

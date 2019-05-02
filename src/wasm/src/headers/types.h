@@ -1,10 +1,62 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
-
-typedef unsigned char byte;
-typedef unsigned int uint32;
-typedef int int32;
 typedef uint32 RowOffset;
+
+
+
+
+
+
+typedef enum
+{
+    ROW_OK = 0,
+    ROW_HAS_DANGLING_QUALIFIERS = 1,
+    ROW_MISMATCHED_COLUMN_COUNT = 2,
+    ROW_MISMATCHED_QUALIFIERS = 4,
+}
+RowStatus;
+
+typedef enum 
+{
+    STARTING_QUALIFIER,
+    ESCAPED_QUALIFIER,
+    ENDING_QUALIFIER,
+    DANGLING_QUALIFIER,
+
+    COLUMN_END,
+    ROW_END,
+
+    CONTENT_CHAR
+} 
+CharGroup;
+
+typedef struct
+{
+    uint32 linebreak;
+    uint32 separator;
+    uint32 qualifier;
+}
+SpecialChars;
+
+
+
+typedef struct
+{
+    uint32 infoLength;
+    uint32 dataLength;
+    uint32 columnCount;
+    RowStatus status;
+}
+RowInfo;
+
+typedef struct
+{
+    uint32 type;
+    uint32 offset;
+    uint32 length;
+}
+ColumnInfo;
+
 
 typedef struct 
 {
@@ -16,6 +68,54 @@ typedef struct
     uint32 floatCount;
 } 
 ColumnDescriptor;
+
+typedef struct 
+{
+    uint32 rowCount;
+    uint32 malformedRows;
+    uint32 minRowLength;
+    uint32 maxRowLength;
+    uint32 sizeOfColumn;
+    uint32 dataLength;
+    uint32 rowsLength;
+} 
+LoadBufferStats;
+
+typedef struct 
+{
+    LoadBufferStats stats;
+    ColumnDescriptor *columns;
+    byte *data;
+    byte *rows;
+} 
+LoadBufferResult;
+
+typedef struct 
+{
+    uint32 columnIndex;
+    ParserState state;
+    byte *ptr;
+
+    int32 isNumber;
+    int32 isFloat;
+    int32 isNegative;
+    int32 hasE;
+    int32 signedE;
+} 
+LoadBufferLocals;
+
+
+
+
+typedef struct 
+{
+    byte *buffer;
+    uint32 length;
+    SpecialChars specialChars;
+    uint32 columnCount;
+    LoadBufferResult *result;
+} 
+LoadBufferOptions;
 
 typedef struct 
 {
@@ -44,14 +144,6 @@ typedef struct
     RowOffset *rows;
 } 
 AnalyzeBufferResult;
-
-typedef struct
-{
-    uint32 linebreak;
-    uint32 separator;
-    uint32 qualifier;
-}
-SpecialChars;
 
 typedef struct 
 {
@@ -89,20 +181,6 @@ typedef struct
 }
 ToBinaryLocals;
 
-typedef enum 
-{
-    STARTING_QUALIFIER,
-    ESCAPED_QUALIFIER,
-    ENDING_QUALIFIER,
-    DANGLING_QUALIFIER,
-
-    COLUMN_END,
-    ROW_END,
-
-    CONTENT_CHAR
-} 
-CharGroup;
-
 typedef struct
 {
     byte *buffer;
@@ -139,14 +217,5 @@ typedef struct
     byte *rows;
 }
 ToBinaryOptions;
-
-typedef enum
-{
-    ROW_OK = 0,
-    ROW_HAS_DANGLING_QUALIFIERS = 1,
-    ROW_MISMATCHED_COLUMN_COUNT = 2,
-    ROW_MISMATCHED_QUALIFIERS = 4,
-}
-RowStatus;
 
 #endif
