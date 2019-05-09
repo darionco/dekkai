@@ -1,6 +1,6 @@
 import {defaultConfig, readHeader, sliceFile, analyzeBlobs, getDecoder} from '../data/DataTools';
 import {DataFile} from '../data/DataFile';
-import {Row} from './Row';
+import {TableRow} from './TableRow';
 
 const kStringType = {
     bin: 0,
@@ -120,17 +120,18 @@ const _TableImp = (function() {
 
             if (type === null) {
                 const col = this.mHeader[index];
-                if (col.stringCount > col.numberCount) {
+                const rowCount = this.rowCount - col.emptyCount;
+                if (col.stringCount > col.intCount + col.floatCount) {
                     this.mColumnTypes.push(Object.assign({}, kStringType, {
-                        certainty: col.stringCount / this.rowCount,
+                        certainty: col.stringCount / rowCount,
                     }));
                 } else if (col.floatCount !== 0) {
                     this.mColumnTypes.push(Object.assign({}, kFloatType, {
-                        certainty: col.numberCount / this.rowCount,
+                        certainty: (col.floatCount + col.intCount) / rowCount,
                     }));
                 } else {
                     this.mColumnTypes.push(Object.assign({}, kIntType, {
-                        certainty: col.numberCount / this.rowCount,
+                        certainty: col.intCount / rowCount,
                     }));
                 }
             } else {
@@ -140,41 +141,13 @@ const _TableImp = (function() {
             }
         }
 
-        async convertToBinary() {
-            const binary = [];
-            const promises = [];
-            const config = Object.assign({} ,
-                this.mConfig,
-                this._binaryLengths(),
-                {
-                    columnTypes: this._binaryColumnTypes(),
-                    columnCount: this.mHeader.length,
-                }
-            );
-            const binaryBuffer = new ArrayBuffer(config.rowLength * this.rowCount);
-
-            for (let i = 0, n = this.mChunks.length; i < n; ++i) {
-                const index = i;
-                const promise = this.mChunks[index].toBinary(config).then(result => {
-                    binary[index] = result;
-                    // add to the binary buffer instead
-                });
-                promises.push(promise);
-            }
-
-            await Promise.all(promises);
-            console.log(binary);
-
-            return null;
-        }
-
         async getRow(i = 0) {
-            const row = new Row(this);
+            const row = new TableRow(this);
             return await row.setIndex(i);
         }
 
         async forEach(itr) {
-            const row = new Row(this);
+            const row = new TableRow(this);
             const chunkCount = this.mChunks.length;
             const loading = [];
             let loadIndex;

@@ -1,8 +1,15 @@
 import {WorkerPool} from '../workers/WorkerPool';
 import {DataChunk} from './DataChunk';
+import {DataChunkRow} from '../csv/DataChunkRow';
 
 export const sizeOf1KB = 1024;
 export const sizeOf1MB = sizeOf1KB * 1024;
+
+export const PARSING_MODE = {
+    ANALYZE: 0,
+    LOAD: 1,
+    BINARY: 2,
+};
 
 export const defaultConfig = {
     separator: ',',
@@ -15,12 +22,37 @@ export const defaultConfig = {
     encoding: 'utf8',
 };
 
+export function combineTypedArrays(arrays) {
+    const views = [];
+    let length = 0;
+    for (let i = 0; i < arrays.length; ++i) {
+        if (arrays[i] instanceof Uint8Array) {
+            views.push(arrays[i]);
+        } else {
+            views.push(new Uint8Array(arrays[i].buffer, arrays[i].byteOffset, arrays[i].byteLength));
+        }
+        length += arrays[i].byteLength;
+    }
+
+    const buffer = new ArrayBuffer(length);
+    const view = new Uint8Array(buffer);
+
+    let off = 0;
+    for (let i = 0; i < views.length; ++i) {
+        view.set(views[i], off);
+        off += views[i].byteLength;
+    }
+
+    return buffer;
+}
+
 export function writeOptionsToBuffer(view, ptr, options) {
     let offset = 0;
     for (let i = 0, n = options.length; i < n; ++i) {
         view.setUint32(ptr + offset, options[i], true);
         offset += 4;
     }
+    return offset;
 }
 
 export function loadBlob(blob) {
@@ -91,7 +123,7 @@ export async function readHeader(file, config = defaultConfig) {
             maxLength: Number.MIN_SAFE_INTEGER,
             emptyCount: 0,
             stringCount: 0,
-            numberCount: 0,
+            intCount: 0,
             floatCount: 0,
         });
     }
@@ -153,13 +185,14 @@ export async function analyzeBlobs(blobs, header, config = defaultConfig) {
         separator: config.separator.charCodeAt(0),
         qualifier: config.qualifier.charCodeAt(0),
         columnCount: header.length,
+        mode: PARSING_MODE.ANALYZE,
     };
     for (let i = 0, n = blobs.length; i < n; ++i) {
         const options = Object.assign({}, optionsBase, {
             blob: blobs[i],
             index: i,
         });
-        promises.push(workerPool.scheduleTask('analyzeBlob', options));
+        promises.push(workerPool.scheduleTask('parseBlob', options));
     }
 
     const results = await Promise.all(promises);
@@ -167,32 +200,92 @@ export async function analyzeBlobs(blobs, header, config = defaultConfig) {
     const aggregated = {
         rowCount: 0,
         malformedRows: 0,
-        minRowLength: Number.MAX_SAFE_INTEGER,
-        maxRowLength: Number.MIN_SAFE_INTEGER,
     };
 
     for (let i = 0; i < results.length; ++i) {
-        chunks[results[i].index] = new DataChunk(blobs[results[i].index], results[i].rowOffsets, results[i].columnsMeta);
-        aggregated.rowCount += results[i].rowCount;
-        aggregated.malformedRows += results[i].malformedRows;
-        aggregated.minRowLength = Math.min(aggregated.minRowLength, results[i].minRowLength);
-        aggregated.maxRowLength = Math.max(aggregated.maxRowLength, results[i].maxRowLength);
+        chunks[results[i].index] = new DataChunk(blobs[results[i].index], header.length, results[i].stats.rowCount, config);
+        aggregated.rowCount += results[i].stats.rowCount;
+        aggregated.malformedRows += results[i].stats.malformedRows;
 
-        const metaView = new Uint32Array(results[i].columnsMeta);
+        const metaView = new Uint32Array(results[i].columns);
         for (let ii = 0, mi = 0; ii < header.length; ++ii, mi += 6) {
             header[ii].minLength = Math.min(header[ii].minLength, metaView[mi]);
             header[ii].maxLength = Math.max(header[ii].maxLength, metaView[mi + 1]);
 
-            header[ii].emptyCount += metaView[mi + 2];
-            header[ii].stringCount += metaView[mi + 3];
-            header[ii].numberCount += metaView[mi + 4];
-            header[ii].floatCount += metaView[mi + 5];
+            header[ii].intCount += metaView[mi + 2];
+            header[ii].floatCount += metaView[mi + 3];
+            header[ii].stringCount += metaView[mi + 4];
+            header[ii].emptyCount += metaView[mi + 5];
         }
     }
+
     return {
         chunks,
         meta: aggregated,
     };
+}
+
+export async function iterateBlobs(blobs, header, itr, config = defaultConfig) {
+    const workerPool = WorkerPool.sharedInstance;
+    const tasks = [];
+
+    const optionsBase = {
+        linebreak: config.linebreak.charCodeAt(0),
+        separator: config.separator.charCodeAt(0),
+        qualifier: config.qualifier.charCodeAt(0),
+        columnCount: header.length,
+        mode: PARSING_MODE.LOAD,
+    };
+
+    for (let i = 0, n = blobs.length; i < n; ++i) {
+        const options = Object.assign({}, optionsBase, {
+            blob: blobs[i],
+            index: i,
+        });
+        tasks.push(options);
+    }
+
+    return await new Promise(resolve => {
+        const row = new DataChunkRow(header, null, config.encoding);
+        const results = {};
+        let blobIndex = 0;
+        let index = 0;
+        const invokeIterator = async result => {
+            const chunk = DataChunk.fromLoadResult(result);
+            row.chunk = chunk;
+            for (let i = 0; i < chunk.rowCount; ++i) {
+                await row.setIndex(i);
+                itr(row, index++);
+            }
+            chunk.unload();
+
+            if (blobIndex >= blobs.length - 1) {
+                resolve();
+            }
+        };
+
+        const handleResult = async result => {
+            if (result.index === blobIndex) {
+                await invokeIterator(result);
+                if (tasks.length) {
+                    workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
+                }
+                while (results.hasOwnProperty(++blobIndex)) {
+                    await invokeIterator(results[blobIndex]);
+                    delete results[blobIndex];
+                    if (tasks.length) {
+                        workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
+                    }
+                }
+            } else {
+                results[result.index] = result;
+            }
+        };
+
+        for (let i = 0; i < workerPool.workers.length; ++i) {
+            workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
+        }
+    });
 }
 
 export function utf8ToStr(view, offset, length) {
