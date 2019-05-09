@@ -1975,10 +1975,10 @@ rollup-plugin-url@^2.2.0:
     mkpath "^1.0.0"
     rollup-pluginutils "^2.3.3"
 
-rollup-plugin-web-worker-loader@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.4.0.tgz#f41aba520a6b12c67811cbee81d2f0d05bd62034"
-  integrity sha512-dTVSDr4li7YTLsfytvp8ya9Gq8ntpU7+CZSj8jIWMaIcIRXzklpRHWXhz2NodZjYEwIMzAYZZmTe1GU94iTkig==
+rollup-plugin-web-worker-loader@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-0.5.0.tgz#52577ed63016cf4153522d1a3c25ab6519576bad"
+  integrity sha512-UA5o5jKQx0mrPfESwZPtk1SmaT0tMnloDyV/INPT2AmzcQM4D4wW+IueSwOtSN7ihiSfQHdlA4eoUOjBdRyFLA==
 
 rollup-pluginutils@^2.3.0, rollup-pluginutils@^2.3.3:
   version "2.5.0"
@@ -2497,10 +2497,10 @@ vary@^1:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-webcpu@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.4.0.tgz#525fb32bd9b4680b6fc1a739c2462381a1acbc85"
-  integrity sha512-QgYBlDRcc2w+DbvDsCngOXvX3ihfzZUssUiHl83iTr++i6DfRh2+uC857RU5R/L90hxBvps4UEqhKM0G8u/5kA==
+webcpu@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/webcpu/-/webcpu-0.4.1.tgz#08af488dbda2fb84c523fbe59f656615b9e64ede"
+  integrity sha512-F8dQEds5ES1hvzVX8OSlL61EV2ALr2QbQBJ2od2CP8RMdaBFtSf3p2btUG3JMZuCM9Vhc9IuCAm7DGcDeGLCtA==
 
 websocket-driver@>=0.5.1:
   version "0.7.0"
