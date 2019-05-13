@@ -4,14 +4,6 @@
 
 typedef enum
 {
-    TYPE_STRING,
-    TYPE_INT,
-    TYPE_FLOAT,
-}
-DataType;
-
-typedef enum
-{
     ROW_STATUS_OK = 0,
     ROW_STATUS_DANGLING_QUALIFIER = 1,
     ROW_STATUS_COLUMN_MISMATCH = 2,

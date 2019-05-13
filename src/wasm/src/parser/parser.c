@@ -3,9 +3,6 @@
 #include "parser.h"
 #include "../base/clearMemory.h"
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 void _parser_writeCharacter(ParserLocals *self);
 bool _parser_isColumnEnd(ParserLocals *self, SpecialChars *specialChars);
 bool _parser_handleFloatE(ParserLocals *self);

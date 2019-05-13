@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "parser/parser.h"
+#include "binary/binary.h"
 
 extern void abort_noRowEnd();
 extern void printNumber(int32, int32, int32, int32);
@@ -56,3 +57,7 @@ void EMSCRIPTEN_KEEPALIVE parseBuffer(Buffer *buffer, SpecialChars *specialChars
     parser_parseBuffer(buffer, specialChars, result, expectedColumnCount);
 }
 
+void EMSCRIPTEN_KEEPALIVE convertToBinary(ParserResult *parsed, BinaryResult *result, uint32 expectedColumnCount)
+{
+    binary_convertFromParsed(parsed, result, expectedColumnCount);
+}
