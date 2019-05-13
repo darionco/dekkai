@@ -229,8 +229,131 @@ function sendParsedDataLoad(resultPtr, options) {
     }, [ columns, buffer ]);
 }
 
-function sendParsedDataBinary(resultPtr, options) {
-    gExports._parseBuffer(resultPtr, specialCharsPtr, resultPtr, options.columnCount);
+function sendParsedDataBinary(parsedPtr, options) {
+    const layoutLength = gView.getUint32(parsedPtr + 12, true);
+    const rowLayoutPtr = gView.getUint32(parsedPtr + 24, true);
+    const resultPtr = rowLayoutPtr + layoutLength;
+    gExports._convertToBinary(parsedPtr, resultPtr, options.columnCount);
+
+    // typedef struct
+    // {
+    //     BinaryHeader header {
+    //         uint32 columnCount;
+    //         uint32 rowCount;
+    //         uint32 rowLength;
+    //         uint32 *types;
+    //         uint32 *lengths;
+    //         uint32 *order;
+    //         uint32 *offsets;
+    //     }
+    //     byte *data;
+    // }
+    // BinaryResult;
+
+    const columnCount = gView.getUint32(resultPtr, true);
+    const rowCount = gView.getUint32(resultPtr + 4, true);
+    const rowLength = gView.getUint32(resultPtr + 8, true);
+
+    const header = {
+        columnCount,
+        rowCount,
+        rowLength,
+        dataLength: rowCount * rowLength,
+        types: [],
+        lengths: [],
+        order: [],
+        offsets: [],
+    };
+
+    const typesPtr = gView.getUint32(resultPtr + 12, true);
+    const lengthsPtr = gView.getUint32(resultPtr + 16, true);
+    const orderPtr = gView.getUint32(resultPtr + 20, true);
+    const offsetsPtr = gView.getUint32(resultPtr + 24, true);
+    const dataPtr = gView.getUint32(resultPtr + 28, true);
+
+    for (let i = 0; i < options.columnCount; ++i) {
+        header.types.push(gView.getUint32(typesPtr + 4 * i, true));
+        header.lengths.push(gView.getUint32(lengthsPtr + 4 * i, true));
+        header.order.push(gView.getUint32(orderPtr + 4 * i, true));
+        header.offsets.push(gView.getUint32(offsetsPtr + 4 * i, true));
+    }
+
+    // console.log(header);
+    //
+    // const row = [];
+    //
+    // for (let i = 0; i < options.columnCount; ++i) {
+    //     if (header.types[i] === 0) {
+    //         const len = gView.getUint8(dataPtr + header.offsets[i]);
+    //         const buf = new Uint8Array(gMemory.buffer, dataPtr + header.offsets[i] + 1, len);
+    //         row.push(String.fromCharCode(...buf));
+    //     } else if (header.types[i] === 1) {
+    //         row.push(gView.getInt32(dataPtr + header.offsets[i], true));
+    //     } else {
+    //         row.push(gView.getFloat32(dataPtr + header.offsets[i], true));
+    //     }
+    // }
+    //
+    // console.log(row);
+
+    const data = gMemory.buffer.slice(dataPtr, dataPtr + header.rowLength * header.rowCount);
+
+    sendSuccess(gID, {
+        index: options.index,
+        header,
+        data,
+    }, [ data ]);
+}
+
+function copyValue(source, sourceOffset, target, targetOffset, type) {
+    if (type === 0) {
+        const len = source.getUint8(sourceOffset);
+        for (let i = 0; i <= len; ++i) {
+            target.setUint8(targetOffset + i, source.getUint8(sourceOffset + i));
+        }
+    } else if (type === 1) {
+        target.setInt32(targetOffset, source.getInt32(sourceOffset, true), true);
+    } else if (type === 2) {
+        target.setFloat32(targetOffset, source.getFloat32(sourceOffset, true), true);
+    } else {
+        throw `ERROR: Unrecognized type (${type})`;
+    }
+}
+
+function mergeIntoBuffer(view, header, parsed, offset) {
+    const parsedView = new DataView(parsed.data);
+    let off = offset;
+    let parsedOffset = 0;
+
+    for (let i = 0; i < parsed.header.rowCount; ++i) {
+        for (let ii = 0; ii < header.columns.length; ++ii) {
+            copyValue(
+                parsedView,
+                parsedOffset + parsed.header.offsets[ii],
+                view,
+                off + header.columns[ii].offset,
+                header.columns[ii].type
+            );
+        }
+        off += header.rowLength;
+        parsedOffset += parsed.header.rowLength;
+    }
+
+    return off;
+}
+
+function mergeParsedResults(options)
+{
+    const buffer = options.buffer;
+    const header = options.binaryHeader;
+    const view = new DataView(buffer);
+    let offset = options.dataOffset;
+
+    for (let i = 0; i < options.parsed.length; ++i) {
+        offset = mergeIntoBuffer(view, header, options.parsed[i], offset);
+    }
+
+    return buffer;
 }
 
 (_self.on || _self.addEventListener).call(_self, 'message', async function CSVManagerWorkerOnMessage(e) {
@@ -267,6 +390,22 @@ function sendParsedDataBinary(resultPtr, options) {
                     break;
             }
         }
+            break;
+
+        case 'mergeParsedResults': {
+            const buffer = mergeParsedResults(message.options);
+            sendSuccess(gID, { buffer }, [ buffer ]);
+        }
+            break;
+
+        case 'mergeIntoBuffer':
+            mergeIntoBuffer(
+                new DataView(message.options.buffer),
+                message.options.binaryHeader,
+                message.options.parsed,
+                message.options.dataOffset
+            );
+            sendSuccess(gID, {});
             break;
 
         case 'close':

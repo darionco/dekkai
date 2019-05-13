@@ -2,6 +2,15 @@ import {WorkerPool} from '../workers/WorkerPool';
 import {DataChunk} from './DataChunk';
 import {DataChunkRow} from '../csv/DataChunkRow';
 
+export const supportsSharedMemory = (function() {
+    try {
+        new SharedArrayBuffer(1); // eslint-disable-line
+        return true;
+    } catch (e) {
+        return false;
+    }
+})();
+
 export const sizeOf1KB = 1024;
 export const sizeOf1MB = sizeOf1KB * 1024;
 
@@ -32,6 +41,26 @@ export function combineTypedArrays(arrays) {
             views.push(new Uint8Array(arrays[i].buffer, arrays[i].byteOffset, arrays[i].byteLength));
         }
         length += arrays[i].byteLength;
+    }
+
+    const buffer = new ArrayBuffer(length);
+    const view = new Uint8Array(buffer);
+
+    let off = 0;
+    for (let i = 0; i < views.length; ++i) {
+        view.set(views[i], off);
+        off += views[i].byteLength;
+    }
+
+    return buffer;
+}
+
+export function combineBuffers(buffers) {
+    const views = [];
+    let length = 0;
+    for (let i = 0; i < buffers.length; ++i) {
+        views.push(new Uint8Array(buffers[i]));
+        length += buffers[i].byteLength;
     }
 
     const buffer = new ArrayBuffer(length);
@@ -286,6 +315,106 @@ export async function iterateBlobs(blobs, header, itr, config = defaultConfig) {
             workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
         }
     });
+}
+
+export async function binaryFromBlobs(blobs, header, config = defaultConfig) {
+    const workerPool = WorkerPool.sharedInstance;
+    const promises = [];
+    const optionsBase = {
+        linebreak: config.linebreak.charCodeAt(0),
+        separator: config.separator.charCodeAt(0),
+        qualifier: config.qualifier.charCodeAt(0),
+        columnCount: header.length,
+        mode: PARSING_MODE.BINARY,
+    };
+    for (let i = 0, n = blobs.length; i < n; ++i) {
+        const options = Object.assign({}, optionsBase, {
+            blob: blobs[i],
+            index: i,
+        });
+        promises.push(workerPool.scheduleTask('parseBlob', options));
+    }
+
+    const results = await Promise.all(promises);
+    const binaryHeader = {
+        columns: [],
+        names: {},
+        rowCount: 0,
+        rowLength: 0,
+        dataLength: 0,
+    };
+
+    for (let i = 0; i < header.length; ++i) {
+        binaryHeader.names[header[i].name] = binaryHeader.columns.length;
+        binaryHeader.columns.push({
+            name: header[i].name,
+            length: 0,
+            offset: 0,
+            type: results[0].header.types[i],
+        });
+    }
+
+    const orderedResults = [];
+    const transferable = [];
+    for (let i = 0; i < results.length; ++i) {
+        binaryHeader.rowCount += results[i].header.rowCount;
+        for (let ii = 0; ii < header.length; ++ii) {
+            binaryHeader.columns[ii].length = Math.max(binaryHeader.columns[ii].length, results[i].header.lengths[ii]);
+        }
+        orderedResults[results[i].index] = results[i];
+        transferable[results[i].index] = results[i].data;
+    }
+
+    let offset = 0;
+    for (let i = 0; i < header.length; ++i) {
+        binaryHeader.columns[results[0].header.order[i]].offset = offset;
+        offset += binaryHeader.columns[results[0].header.order[i]].length;
+    }
+    binaryHeader.rowLength = offset;
+    binaryHeader.dataLength = offset * binaryHeader.rowCount;
+
+    let dataOffset = 0;
+    let buffer;
+    if (config.output && config.output.buffer) {
+        buffer = config.output.buffer;
+        if (config.output.offset) {
+            dataOffset = config.output.offset;
+        }
+    } else {
+        if (supportsSharedMemory) {
+            buffer = new SharedArrayBuffer(binaryHeader.dataLength); // eslint-disable-line
+        } else {
+            buffer = new ArrayBuffer(binaryHeader.dataLength);
+        }
+    }
+
+    if (supportsSharedMemory && buffer instanceof SharedArrayBuffer) { // eslint-disable-line
+        promises.length = 0;
+        for (let i = 0; i < orderedResults.length; ++i) {
+            promises.push(workerPool.scheduleTask('mergeIntoBuffer', {
+                buffer,
+                binaryHeader,
+                dataOffset,
+                parsed: orderedResults[i],
+            }), [ orderedResults[i].data ]);
+
+            dataOffset += orderedResults[i].header.rowCount * binaryHeader.rowLength;
+        }
+        await Promise.all(promises);
+    } else {
+        transferable.push(buffer);
+        buffer = await workerPool.scheduleTask('mergeParsedResults', {
+            buffer,
+            binaryHeader,
+            dataOffset,
+            parsed: orderedResults,
+        }, transferable);
+    }
+
+    return {
+        header: binaryHeader,
+        data: buffer,
+    };
 }
 
 export function utf8ToStr(view, offset, length) {
