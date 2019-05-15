@@ -75,6 +75,18 @@
 
         document.body.appendChild(document.createElement('br'));
 
+        const binaryTitle = document.createElement('span');
+        binaryTitle.innerText = ' Parse to binary table: ';
+        document.body.appendChild(binaryTitle);
+
+        const binary = document.createElement('input');
+        binary.setAttribute('type', 'checkbox');
+        binary.setAttribute('name', 'Parse to binary table');
+        binary.checked = false;
+        document.body.appendChild(binary);
+
+        document.body.appendChild(document.createElement('br'));
+
         let option;
 
         const encodingTitle = document.createElement('span');
@@ -174,17 +186,27 @@
             document.body.innerHTML = '';
 
             const start = performance.now();
-            const table = await dekkai.tableFromLocalFile(fileInput.files[0], {
+            const options = {
                 separator: separator.value,
                 qualifier: qualifier.value,
                 firstRowHeader: firstRow.checked,
                 encoding: encoding.options[encoding.selectedIndex].value,
-            });
+            };
+
+            let table;
+
+            if (binary.checked) {
+                table = await dekkai.binaryFromLocalFile(fileInput.files[0],options);
+            } else {
+                table = await dekkai.tableFromLocalFile(fileInput.files[0],options);
+            }
+
             const time = performance.now() - start;
+            const columns = table.header.columns || table.header;
             let html = '';
 
             html += `<div>Loading complete, took: ${time}ms</div>`;
-            html += `<div>Total columns: ${table.header.length}</div>`;
+            html += `<div>Total columns: ${columns.length}</div>`;
             html += `<div>Total rows: ${table.rowCount}</div>`;
             html += `<div>Malformed rows: ${table.meta.malformedRows}</div>`;
 
@@ -196,8 +218,9 @@
             html += '<table>';
             html += '<thead>';
             html += '<tr>';
-            for (let i = 0; i < table.header.length; ++i) {
-                html += `<th>${table.header[i].name}</th>`;
+
+            for (let i = 0; i < columns.length; ++i) {
+                html += `<th>${columns[i].name}</th>`;
             }
             html += '</tr>';
             html += '<tr>';
