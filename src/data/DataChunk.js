@@ -1,5 +1,5 @@
 import {WorkerPool} from '../workers/WorkerPool';
-import {PARSING_MODE} from './DataTools';
+import {PARSING_MODE} from './ParsingModes';
 
 export class DataChunk {
     static fromLoadResult(result) {

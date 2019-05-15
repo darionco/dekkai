@@ -1,6 +1,6 @@
 import * as DataTools from '../data/DataTools';
 import {DataFile} from '../data/DataFile';
-import {PARSING_MODE} from '../data/DataTools';
+import {PARSING_MODE} from '../data/ParsingModes';
 import {combineTypedArrays} from '../data/DataTools';
 
 const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
@@ -342,8 +342,7 @@ function mergeIntoBuffer(view, header, parsed, offset) {
     return off;
 }
 
-function mergeParsedResults(options)
-{
+function mergeParsedResults(options) {
     const buffer = options.buffer;
     const header = options.binaryHeader;
     const view = new DataView(buffer);
