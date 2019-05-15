@@ -1,4 +1,4 @@
-import {getDecoder} from '../data/DataTools';
+import {getDecoder} from '../data/Decoder';
 import {Row} from './Row';
 
 export class DataChunkRow extends Row {

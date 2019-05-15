@@ -1,5 +1,6 @@
 import {DataFile} from '../data/DataFile';
-import {binaryFromBlobs, defaultConfig, getDecoder, readHeader, sliceFile} from '../data/DataTools';
+import {binaryFromBlobs, defaultConfig, readHeader, sliceFile} from '../data/DataTools';
+import {getDecoder} from '../data/Decoder';
 import {BinaryRow} from './BinaryRow';
 
 export class BinaryTable {

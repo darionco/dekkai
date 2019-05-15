@@ -1,4 +1,5 @@
-import {defaultConfig, readHeader, sliceFile, analyzeBlobs, getDecoder} from '../data/DataTools';
+import {defaultConfig, readHeader, sliceFile, analyzeBlobs} from '../data/DataTools';
+import {getDecoder} from '../data/Decoder';
 import {DataFile} from '../data/DataFile';
 import {TableRow} from './TableRow';
 
