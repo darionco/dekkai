@@ -30,7 +30,7 @@ export class BinaryRow extends Row {
     }
 
     setIndex(index) { // eslint-disable-line
-        this.mRowOffset = this.mTable.header.rowLength * index;
+        this.mRowOffset = this.mTable.header.dataOffset + this.mTable.header.rowLength * index;
         return this;
     }
 

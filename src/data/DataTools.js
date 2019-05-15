@@ -367,13 +367,13 @@ export async function binaryFromBlobs(blobs, header, config = defaultConfig) {
     }
     binaryHeader.rowLength = offset;
     binaryHeader.dataLength = offset * binaryHeader.rowCount;
+    binaryHeader.dataOffset = 0;
 
-    let dataOffset = 0;
     let buffer;
     if (config.output && config.output.buffer) {
         buffer = config.output.buffer;
         if (config.output.offset) {
-            dataOffset = config.output.offset;
+            binaryHeader.dataOffset = config.output.offset;
         }
     } else {
         if (supportsSharedMemory) {
@@ -383,6 +383,7 @@ export async function binaryFromBlobs(blobs, header, config = defaultConfig) {
         }
     }
 
+    let dataOffset = binaryHeader.dataOffset;
     if (supportsSharedMemory && buffer instanceof SharedArrayBuffer) { // eslint-disable-line
         promises.length = 0;
         for (let i = 0; i < orderedResults.length; ++i) {
