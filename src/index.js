@@ -3,6 +3,9 @@ import Worker from 'web-worker:./workers/Worker';
 import {Table} from './csv/Table';
 import {WebCPU} from 'webcpu';
 import wasmData from './wasm/bin/Parser.wasm';
+import {DataFile} from './data/DataFile';
+import {defaultConfig, readHeader, sliceFile, iterateBlobs} from './data/DataTools';
+import {BinaryTable} from './CSV/BinaryTable';
 
 /* handle running in node.js */
 const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
@@ -62,17 +65,41 @@ const _dekkai = (function() {
             this[initializedSymbol] = null;
         }
 
-        async loadLocalFile(file, options = null) {
+        async iterateLocalFile(file, itr, options = null) {
+            await this.init();
+            const dataFile = new DataFile(file);
+            const config = Object.freeze(Object.assign({}, defaultConfig, options));
+            const {header, offset} = await readHeader(dataFile, config);
+            const blobs = await sliceFile(dataFile, offset, config);
+            await iterateBlobs(blobs, header, itr, config);
+        }
+
+        async binaryFromLocalFile(file, options = null) {
+            await this.init();
+            return await BinaryTable.fromFile(file, options);
+        }
+
+        async binaryFromURL(url, options = null) {
+            await this.init();
+            return await BinaryTable.fromURL(url, options);
+        }
+
+        async binaryFromString(str, options = null) {
+            await this.init();
+            return await BinaryTable.fromString(str, options);
+        }
+
+        async tableFromLocalFile(file, options = null) {
             await this.init();
             return await Table.fromFile(file, options);
         }
 
-        async loadFromURL(url, options = null) {
+        async tableFromURL(url, options = null) {
             await this.init();
             return await Table.fromURL(url, options);
         }
 
-        async loadFromString(str, options = null) {
+        async tableFromString(str, options = null) {
             await this.init();
             return await Table.fromString(str, options);
         }

@@ -1,5 +1,7 @@
 import * as DataTools from '../data/DataTools';
 import {DataFile} from '../data/DataFile';
+import {PARSING_MODE} from '../data/ParsingModes';
+import {combineTypedArrays} from '../data/DataTools';
 
 const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
 const kRequire = kIsNodeJS ? module.require : null; // eslint-disable-line
@@ -15,7 +17,11 @@ let gU8View = null;
 async function init(options) {
     const memorySize = (DataTools.sizeOf1MB * 64) / (DataTools.sizeOf1KB * 64);
     gMemory = new WebAssembly.Memory({initial: memorySize, maximum: memorySize});
-    gWASM = await new WebAssembly.Instance(options.wasm, {env: { memory: gMemory }});
+    gWASM = await new WebAssembly.Instance(options.wasm, {
+        env: {
+            memory: gMemory,
+        },
+    });
     gExports = gWASM.exports;
 
     gView = new DataView(gMemory.buffer);
@@ -32,175 +38,112 @@ async function calculateOffsets(options) {
     const blob = dataFile.slice(start, end);
     const buffer = await blob.load();
 
-    const bufferPtr = 4;
-    const optionsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
+    // byte *data;
+    const dataPtr = 4;
+    gU8View.set(new Uint8Array(buffer), dataPtr);
 
-    gU8View.set(new Uint8Array(buffer), bufferPtr);
-
-    /*
-    * options:
-    *  0:[0] - buffer ptr
-    *  4:[1] - buffer length
-    *  8:[2] - start
-    * 12:[3] - linebreak char
-    * 16:[4] - result space
-    */
-    DataTools.writeOptionsToBuffer(gView, optionsPtr, [
-        bufferPtr,
+    // typedef struct
+    // {
+    //     byte *data;
+    //     uint32 length;
+    // }
+    // Buffer;
+    const bufferPtr = dataPtr + Math.ceil(buffer.byteLength / 4) * 4;
+    const bufferPtrLength = DataTools.writeOptionsToBuffer(gView, bufferPtr, [
+        dataPtr,
         buffer.byteLength,
-        options.end - start,
-        options.linebreak,
     ]);
 
-    gExports._findClosestLineBreak(optionsPtr);
-
-    return {
-        offset: gView.getInt32(optionsPtr + 16, true),
-        index: options.index,
-    };
-}
-
-async function analyzeBlob(options) {
-    const blob = DataFile.deserializeBlob(options.blob);
-    const buffer = await blob.load();
-
-    const bufferPtr = 4;
-    const optionsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
-
-    gU8View.set(new Uint8Array(buffer), bufferPtr);
-
-    /*
-     * typedef struct
-     * {
-     *     byte *buffer;
-     *     uint32 length;
-     *     {
-     *         uint32 linebreak;
-     *         uint32 separator;
-     *         uint32 qualifier;
-     *     {
-     *     uint32 columnCount;
-     *     AnalyzeBufferResult *result;
-     * }
-     * AnalyzeBufferOptions;
-     */
-    DataTools.writeOptionsToBuffer(gView, optionsPtr, [
-        bufferPtr,
-        buffer.byteLength,
+    // typedef struct
+    // {
+    //     uint32 linebreak;
+    //     uint32 separator;
+    //     uint32 qualifier;
+    // }
+    // SpecialChars;
+    const specialCharsPtr = bufferPtr + bufferPtrLength;
+    const specialCharsPtrLength = DataTools.writeOptionsToBuffer(gView, specialCharsPtr, [
         options.linebreak,
         options.separator,
         options.qualifier,
-        options.columnCount,
-        0,
     ]);
 
-    gExports._analyzeBuffer(optionsPtr);
+    // int32 *result;
+    const resultPtr = specialCharsPtr + specialCharsPtrLength;
 
-    /*
-     * typedef struct
-     * {
-     *     AnalyzeBufferStats stats;
-     *     ColumnDescriptor *columns;
-     *     RowOffset *rows;
-     * }
-     * AnalyzeBufferResult;
-     */
-    const resultPtr = gView.getUint32(optionsPtr + 24, true);
-    const statsPtr = resultPtr;
-    const columnsPtr = gView.getUint32(resultPtr + 20, true);
-    const rowsPtr = gView.getUint32(resultPtr + 24, true);
+    gExports._findRowEnd(bufferPtr, specialCharsPtr, resultPtr, options.end - start);
 
-    /*
-     * typedef struct
-     * {
-     *     uint32 rowCount;
-     *     uint32 malformedRows;
-     *     uint32 minRowLength;
-     *     uint32 maxRowLength;
-     *     uint32 sizeOfColumn;
-     * }
-     * AnalyzeBufferStats;
-     */
-    const rowCount = gView.getUint32(statsPtr, true);
-    const malformedRows = gView.getUint32(statsPtr + 4, true);
-    const minRowLength = gView.getUint32(statsPtr + 8, true);
-    const maxRowLength = gView.getUint32(statsPtr + 12, true);
-    const sizeOfColumn = gView.getUint32(statsPtr + 16, true);
-    /*
-     * typedef struct
-     * {
-     *     uint32 minLength;
-     *     uint32 maxLength;
-     *     uint32 emptyCount;
-     *     uint32 stringCount;
-     *     uint32 numberCount;
-     *     uint32 floatCount;
-     * }
-     * ColumnDescriptor;
-     */
-    const columnsMeta = gMemory.buffer.slice(columnsPtr, columnsPtr + sizeOfColumn * options.columnCount);
-
-    /*
-     * typedef uint32 RowOffset;
-     */
-    const rowOffsets = gMemory.buffer.slice(rowsPtr, rowsPtr + rowCount * 4);
-
-    return {
-        rowCount: rowCount,
-        malformedRows: malformedRows,
-        minRowLength: minRowLength,
-        maxRowLength: maxRowLength,
-        columnsMeta: columnsMeta,
-        rowOffsets: rowOffsets,
-        index: options.index,
-    };
+    return gView.getInt32(resultPtr, true);
 }
 
-async function loadChunk(options) {
+async function parseBlob(options) {
     const blob = DataFile.deserializeBlob(options.blob);
     const buffer = await blob.load();
 
-    const bufferPtr = 4;
-    gU8View.set(new Uint8Array(buffer), bufferPtr);
+    // byte *data;
+    const dataPtr = 4;
+    gU8View.set(new Uint8Array(buffer), dataPtr);
 
-    const columnLengthsPtr = bufferPtr + Math.ceil(buffer.byteLength / 4) * 4;
-    for (let i = 0; i < options.columnCount; ++i) {
-        gView.setUint32(columnLengthsPtr + 4 * i, options.columnLengths[i], true);
-    }
-
-    const columnOffsetsPtr = columnLengthsPtr + options.columnCount * 4;
-    for (let i = 0; i < options.columnCount; ++i) {
-        gView.setUint32(columnOffsetsPtr + 4 * i, options.columnOffsets[i], true);
-    }
-
-    const optionsPtr = columnOffsetsPtr + options.columnCount * 4;
-    const optionsArr = [
-        bufferPtr,
+    // typedef struct
+    // {
+    //     byte *data;
+    //     uint32 length;
+    // }
+    // Buffer;
+    const bufferPtr = dataPtr + Math.ceil(buffer.byteLength / 4) * 4;
+    const bufferPtrLength = DataTools.writeOptionsToBuffer(gView, bufferPtr, [
+        dataPtr,
         buffer.byteLength,
+    ]);
 
-        columnLengthsPtr,
-        columnOffsetsPtr,
-        options.columnCount,
-
-        options.rowLength,
-        options.rowCount,
-
+    // typedef struct
+    // {
+    //     uint32 linebreak;
+    //     uint32 separator;
+    //     uint32 qualifier;
+    // }
+    // SpecialChars;
+    const specialCharsPtr = bufferPtr + bufferPtrLength;
+    const specialCharsPtrLength = DataTools.writeOptionsToBuffer(gView, specialCharsPtr, [
         options.linebreak,
         options.separator,
         options.qualifier,
+    ]);
 
-        // 0,
-    ];
-    DataTools.writeOptionsToBuffer(gView, optionsPtr, optionsArr);
+    // ParserResult *result;
+    const resultPtr = specialCharsPtr + specialCharsPtrLength;
 
-    gExports._loadChunk(optionsPtr);
+    gExports._parseBuffer(bufferPtr, specialCharsPtr, resultPtr, options.columnCount);
 
-    const rowsPtr = gView.getUint32(optionsPtr + optionsArr.length * 4, true);
+    return resultPtr;
+}
 
-    const result = gMemory.buffer.slice(rowsPtr, rowsPtr + options.rowLength * options.rowCount);
+function parseHeaderFromBuffer(buffer) {
+    const view = new DataView(buffer);
+
+    /*
+     * Header:
+     * 0 - row offset list ptr
+     * 1 - row layout ptr
+     * 2 - row data ptr
+     */
+    const offsetListPtr = view.getUint32(0, true);
+    const layoutPtr = view.getUint32(4, true);
+    const dataPtr = view.getUint32(8, true);
 
     return {
-        buffer: result,
+        offsetList: {
+            ptr: offsetListPtr,
+            length: layoutPtr - offsetListPtr,
+        },
+        layout: {
+            ptr: layoutPtr,
+            length: dataPtr - layoutPtr,
+        },
+        data: {
+            ptr: dataPtr,
+            length: buffer.byteLength - dataPtr,
+        },
     };
 }
 
@@ -222,6 +165,196 @@ function sendSuccess(id, data = null, transferable = null) {
     _self.postMessage(kIsNodeJS ? { data: message } : message, transferable);
 }
 
+function sendParsedDataAnalyze(resultPtr, options) {
+    const stats = {
+        rowCount: gView.getUint32(resultPtr, true),
+        malformedRows: gView.getUint32(resultPtr + 4, true),
+        dataLength: gView.getUint32(resultPtr + 8, true),
+        layoutLength: gView.getUint32(resultPtr + 12, true),
+    };
+
+    const columnInfoPtr = gView.getUint32(resultPtr + 16, true);
+    const columns = gMemory.buffer.slice(columnInfoPtr, columnInfoPtr + options.columnCount * 24);
+
+    sendSuccess(gID, {
+        index: options.index,
+        columns,
+        stats,
+    }, [ columns ]);
+}
+
+function sendParsedDataLoad(resultPtr, options) {
+    const stats = {
+        rowCount: gView.getUint32(resultPtr, true),
+        malformedRows: gView.getUint32(resultPtr + 4, true),
+        dataLength: gView.getUint32(resultPtr + 8, true),
+        layoutLength: gView.getUint32(resultPtr + 12, true),
+    };
+
+    const columnInfoPtr = gView.getUint32(resultPtr + 16, true);
+    const rowDataPtr = gView.getUint32(resultPtr + 20, true);
+    const rowLayoutPtr = gView.getUint32(resultPtr + 24, true);
+
+    const columns = gMemory.buffer.slice(columnInfoPtr, columnInfoPtr + options.columnCount * 24);
+
+    const data = new Uint8Array(gMemory.buffer, rowDataPtr, stats.dataLength);
+    const layout = new Uint8Array(gMemory.buffer, rowLayoutPtr, stats.layoutLength);
+
+    const rowOffsetList = new Uint32Array(stats.rowCount);
+    let rowOffset = 0;
+    for (let i = 0; i < stats.rowCount; i++) {
+        rowOffsetList[i] = rowOffset;
+        rowOffset += 12 + gView.getUint32(rowLayoutPtr + rowOffset, true) * 12;
+    }
+
+    /*
+     * Header:
+     * 0 - row offset list ptr
+     * 1 - row layout ptr
+     * 2 - row data ptr
+     */
+    const header = new Uint32Array(3);
+    header[0] = header.buffer.byteLength;
+    header[1] = header[0] + rowOffsetList.buffer.byteLength;
+    header[2] = header[1] + layout.length;
+
+    const buffer = combineTypedArrays([header, rowOffsetList, layout, data]);
+
+    sendSuccess(gID, {
+        header: parseHeaderFromBuffer(buffer),
+        index: options.index,
+        columns,
+        buffer,
+        stats,
+    }, [ columns, buffer ]);
+}
+
+function sendParsedDataBinary(parsedPtr, options) {
+    const layoutLength = gView.getUint32(parsedPtr + 12, true);
+    const rowLayoutPtr = gView.getUint32(parsedPtr + 24, true);
+    const resultPtr = rowLayoutPtr + layoutLength;
+    gExports._convertToBinary(parsedPtr, resultPtr, options.columnCount);
+
+    // typedef struct
+    // {
+    //     BinaryHeader header {
+    //         uint32 columnCount;
+    //         uint32 rowCount;
+    //         uint32 rowLength;
+    //         uint32 *types;
+    //         uint32 *lengths;
+    //         uint32 *order;
+    //         uint32 *offsets;
+    //     }
+    //     byte *data;
+    // }
+    // BinaryResult;
+
+    const columnCount = gView.getUint32(resultPtr, true);
+    const rowCount = gView.getUint32(resultPtr + 4, true);
+    const rowLength = gView.getUint32(resultPtr + 8, true);
+
+    const header = {
+        columnCount,
+        rowCount,
+        rowLength,
+        dataLength: rowCount * rowLength,
+        types: [],
+        lengths: [],
+        order: [],
+        offsets: [],
+    };
+
+    const typesPtr = gView.getUint32(resultPtr + 12, true);
+    const lengthsPtr = gView.getUint32(resultPtr + 16, true);
+    const orderPtr = gView.getUint32(resultPtr + 20, true);
+    const offsetsPtr = gView.getUint32(resultPtr + 24, true);
+    const dataPtr = gView.getUint32(resultPtr + 28, true);
+
+    for (let i = 0; i < options.columnCount; ++i) {
+        header.types.push(gView.getUint32(typesPtr + 4 * i, true));
+        header.lengths.push(gView.getUint32(lengthsPtr + 4 * i, true));
+        header.order.push(gView.getUint32(orderPtr + 4 * i, true));
+        header.offsets.push(gView.getUint32(offsetsPtr + 4 * i, true));
+    }
+
+    // console.log(header);
+    //
+    // const row = [];
+    //
+    // for (let i = 0; i < options.columnCount; ++i) {
+    //     if (header.types[i] === 0) {
+    //         const len = gView.getUint8(dataPtr + header.offsets[i]);
+    //         const buf = new Uint8Array(gMemory.buffer, dataPtr + header.offsets[i] + 1, len);
+    //         row.push(String.fromCharCode(...buf));
+    //     } else if (header.types[i] === 1) {
+    //         row.push(gView.getInt32(dataPtr + header.offsets[i], true));
+    //     } else {
+    //         row.push(gView.getFloat32(dataPtr + header.offsets[i], true));
+    //     }
+    // }
+    //
+    // console.log(row);
+
+    const data = gMemory.buffer.slice(dataPtr, dataPtr + header.rowLength * header.rowCount);
+
+    sendSuccess(gID, {
+        index: options.index,
+        header,
+        data,
+    }, [ data ]);
+}
+
+function copyValue(source, sourceOffset, target, targetOffset, type) {
+    if (type === 0) {
+        const len = source.getUint8(sourceOffset);
+        for (let i = 0; i <= len; ++i) {
+            target.setUint8(targetOffset + i, source.getUint8(sourceOffset + i));
+        }
+    } else if (type === 1) {
+        target.setInt32(targetOffset, source.getInt32(sourceOffset, true), true);
+    } else if (type === 2) {
+        target.setFloat32(targetOffset, source.getFloat32(sourceOffset, true), true);
+    } else {
+        throw `ERROR: Unrecognized type (${type})`;
+    }
+}
+
+function mergeIntoBuffer(view, header, parsed, offset) {
+    const parsedView = new DataView(parsed.data);
+    let off = offset;
+    let parsedOffset = 0;
+
+    for (let i = 0; i < parsed.header.rowCount; ++i) {
+        for (let ii = 0; ii < header.columns.length; ++ii) {
+            copyValue(
+                parsedView,
+                parsedOffset + parsed.header.offsets[ii],
+                view,
+                off + header.columns[ii].offset,
+                header.columns[ii].type
+            );
+        }
+        off += header.rowLength;
+        parsedOffset += parsed.header.rowLength;
+    }
+
+    return off;
+}
+
+function mergeParsedResults(options) {
+    const buffer = options.buffer;
+    const header = options.binaryHeader;
+    const view = new DataView(buffer);
+    let offset = options.dataOffset;
+
+    for (let i = 0; i < options.parsed.length; ++i) {
+        offset = mergeIntoBuffer(view, header, options.parsed[i], offset);
+    }
+
+    return buffer;
+}
+
 (_self.on || _self.addEventListener).call(_self, 'message', async function CSVManagerWorkerOnMessage(e) {
     const message = e.data;
     switch (message.type) {
@@ -231,19 +364,47 @@ function sendSuccess(id, data = null, transferable = null) {
             break;
 
         case 'calculateOffsets':
-            sendSuccess(gID, await calculateOffsets(message.options));
+            sendSuccess(gID, {
+                offset: await calculateOffsets(message.options),
+                index: message.options.index,
+            });
             break;
 
-        case 'analyzeBlob': {
-            const result = await analyzeBlob(message.options);
-            sendSuccess(gID, result, [result.columnsMeta, result.rowOffsets]);
+        case 'parseBlob': {
+            const result = await parseBlob(message.options);
+            switch (message.options.mode) {
+                case PARSING_MODE.ANALYZE:
+                    sendParsedDataAnalyze(result, message.options);
+                    break;
+
+                case PARSING_MODE.LOAD:
+                    sendParsedDataLoad(result, message.options);
+                    break;
+
+                case PARSING_MODE.BINARY:
+                    sendParsedDataBinary(result, message.options);
+                    break;
+
+                default:
+                    break;
+            }
         }
             break;
 
-        case 'loadChunk': {
-            const result = await loadChunk(message.options);
-            sendSuccess(gID, result, [result.buffer]);
+        case 'mergeParsedResults': {
+            const buffer = mergeParsedResults(message.options);
+            sendSuccess(gID, { buffer }, [ buffer ]);
         }
+            break;
+
+        case 'mergeIntoBuffer':
+            mergeIntoBuffer(
+                new DataView(message.options.buffer),
+                message.options.binaryHeader,
+                message.options.parsed,
+                message.options.dataOffset
+            );
+            sendSuccess(gID, {});
             break;
 
         case 'close':

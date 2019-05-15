@@ -75,6 +75,18 @@
 
         document.body.appendChild(document.createElement('br'));
 
+        const binaryTitle = document.createElement('span');
+        binaryTitle.innerText = ' Parse to binary table: ';
+        document.body.appendChild(binaryTitle);
+
+        const binary = document.createElement('input');
+        binary.setAttribute('type', 'checkbox');
+        binary.setAttribute('name', 'Parse to binary table');
+        binary.checked = false;
+        document.body.appendChild(binary);
+
+        document.body.appendChild(document.createElement('br'));
+
         let option;
 
         const encodingTitle = document.createElement('span');
@@ -174,17 +186,27 @@
             document.body.innerHTML = '';
 
             const start = performance.now();
-            const table = await dekkai.loadLocalFile(fileInput.files[0], {
+            const options = {
                 separator: separator.value,
                 qualifier: qualifier.value,
                 firstRowHeader: firstRow.checked,
                 encoding: encoding.options[encoding.selectedIndex].value,
-            });
+            };
+
+            let table;
+
+            if (binary.checked) {
+                table = await dekkai.binaryFromLocalFile(fileInput.files[0],options);
+            } else {
+                table = await dekkai.tableFromLocalFile(fileInput.files[0],options);
+            }
+
             const time = performance.now() - start;
+            const columns = table.header.columns || table.header;
             let html = '';
 
             html += `<div>Loading complete, took: ${time}ms</div>`;
-            html += `<div>Total columns: ${table.header.length}</div>`;
+            html += `<div>Total columns: ${columns.length}</div>`;
             html += `<div>Total rows: ${table.rowCount}</div>`;
             html += `<div>Malformed rows: ${table.meta.malformedRows}</div>`;
 
@@ -196,19 +218,18 @@
             html += '<table>';
             html += '<thead>';
             html += '<tr>';
-            for (let i = 0; i < table.header.length; ++i) {
-                html += `<th>${table.header[i].name}</th>`;
+
+            for (let i = 0; i < columns.length; ++i) {
+                html += `<th>${columns[i].name}</th>`;
             }
             html += '</tr>';
             html += '<tr>';
-            for (let i = 0; i < table.header.length; ++i) {
-                const column = table.header[i];
-                if (column.stringCount > column.numberCount) {
-                    html += '<th>string</th>';
-                } else if (column.stringCount === 0) {
-                    html += `<th>${column.floatCount ? 'float' : 'int'}</th>`;
+            for (let i = 0; i < table.columnTypes.length; ++i) {
+                const column = table.columnTypes[i];
+                if (column.certainty < 1) {
+                    html += `<th>${column.name} (${Math.floor((column.certainty) * 1000) / 10}% certainty)</th>`;
                 } else {
-                    html += `<th>${column.floatCount ? 'float' : 'int'} (${Math.floor((column.numberCount / table.rowCount) * 1000) / 10}% certainty)</th>`;
+                    html += `<th>${column.name}</th>`;
                 }
             }
             html += '</tr>';
@@ -225,6 +246,13 @@
                 html += '</tr>';
             }
 
+            html += '</tbody>';
+            html += '</table>';
+
+            document.body.innerHTML = html;
+
+            console.log(table);
+
             // const s = performance.now();
             // let c = 0;
             // let r = 0;
@@ -236,12 +264,36 @@
             // console.log(c);
             // console.log(r);
 
-            html += '</tbody>';
-            html += '</table>';
 
-            document.body.innerHTML = html;
-
-            console.log(table);
+            // const start = performance.now();
+            // let html = '';
+            // let i = 0;
+            //
+            // html += '<div>First 300 rows</div>';
+            // html += '<table>';
+            // html += '<tbody>';
+            //
+            //
+            // await dekkai.iterateLocalFile(fileInput.files[0], (row, index) => {
+            //     if (i++ < 300) {
+            //         html += '<tr>';
+            //         row.forEach(value => {
+            //             html += `<td>${value}</td>`;
+            //         });
+            //         html += '</tr>';
+            //     }
+            // }, {
+            //     separator: separator.value,
+            //     qualifier: qualifier.value,
+            //     firstRowHeader: firstRow.checked,
+            //     encoding: encoding.options[encoding.selectedIndex].value,
+            // });
+            // const time = performance.now() - start;
+            //
+            // html += '</tbody>';
+            // html += '</table>';
+            //
+            // document.body.innerHTML = `<div>Took: ${time}ms</div>` + html;
         });
         // dekkai.init(1);
     }

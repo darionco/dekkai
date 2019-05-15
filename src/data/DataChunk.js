@@ -1,29 +1,27 @@
 import {WorkerPool} from '../workers/WorkerPool';
+import {PARSING_MODE} from './ParsingModes';
 
 export class DataChunk {
-    constructor(blob, rowOffsets, meta) {
+    static fromLoadResult(result) {
+        const ret = new DataChunk(null, 0, result.stats.rowCount);
+        ret._handleLoadResult(result);
+        ret.mLoading = Promise.resolve(result);
+        return ret;
+    }
+
+    constructor(blob, columnCount, rowCount, config) {
         this.mBlob = blob;
+        this.mColumnCount = columnCount;
+        this.mRowCount = rowCount;
+        this.mConfig = Object.assign({}, config);
         this.mBuffer = null;
         this.mView = null;
 
-        this.mOffsets = new Uint32Array(rowOffsets);
-        this.mMeta = meta;
+        this.mOffsetList = null;
+        this.mLayout = null;
+        this.mDataOffset = 0;
 
         this.mLoading = null;
-
-        this.mRowLength = 4;
-        this.mColumnOffsets = [];
-        this.mColumnLengths = [];
-        this.mColumnCount = Math.floor(this.mMeta.byteLength / 24);
-
-        const metaView = new DataView(this.mMeta);
-        let length;
-        for (let i = 0; i < this.mColumnCount; ++i) {
-            this.mColumnOffsets.push(this.mRowLength);
-            length = Math.ceil(metaView.getInt32(4 + 24 * i, true) / 4) * 4;
-            this.mColumnLengths.push(length);
-            this.mRowLength += length + 4;
-        }
     }
 
     get blob() {
@@ -38,6 +36,18 @@ export class DataChunk {
         return this.mView;
     }
 
+    get offsetList() {
+        return this.mOffsetList;
+    }
+
+    get layout() {
+        return this.mLayout;
+    }
+
+    get dataOffset() {
+        return this.mDataOffset;
+    }
+
     get loaded() {
         return this.mBuffer !== null;
     }
@@ -46,51 +56,25 @@ export class DataChunk {
         return this.mLoading;
     }
 
-    get columnCount() {
-        return this.mColumnCount;
-    }
-
-    get columnOffsets() {
-        return this.mColumnOffsets;
-    }
-
     get rowCount() {
-        return this.mOffsets.length;
+        return this.mRowCount;
     }
 
-    get rowLength() {
-        return this.mRowLength;
-    }
-
-    get offsets() {
-        return this.mOffsets;
-    }
-
-    get meta() {
-        return this.mMeta;
-    }
-
-    load(config) {
+    load() {
         if (!this.mLoading) {
             const workerPool = WorkerPool.sharedInstance;
             const options = {
-                blob: this.mBlob,
-
-                columnLengths: this.mColumnLengths,
-                columnOffsets: this.mColumnOffsets,
+                linebreak: this.mConfig.linebreak.charCodeAt(0),
+                separator: this.mConfig.separator.charCodeAt(0),
+                qualifier: this.mConfig.qualifier.charCodeAt(0),
                 columnCount: this.mColumnCount,
-
-                rowLength: this.mRowLength,
-                rowCount: this.rowCount,
-
-                linebreak: config.linebreak.charCodeAt(0),
-                separator: config.separator.charCodeAt(0),
-                qualifier: config.qualifier.charCodeAt(0),
+                mode: PARSING_MODE.LOAD,
+                blob: this.mBlob,
+                index: 0,
             };
-            const loading = workerPool.scheduleTask('loadChunk', options).then(result => {
+            const loading = workerPool.scheduleTask('parseBlob', options).then(result => {
                 if (this.mLoading === loading) {
-                    this.mBuffer = result.buffer;
-                    this.mView = new DataView(this.mBuffer);
+                    this._handleLoadResult(result);
                 }
                 return this;
             });
@@ -103,5 +87,16 @@ export class DataChunk {
         this.mBuffer = null;
         this.mView = null;
         this.mLoading = null;
+        this.mOffsetList = null;
+        this.mLayout = null;
+        this.mData = null;
+    }
+
+    _handleLoadResult(result) {
+        this.mBuffer = result.buffer;
+        this.mView = new DataView(this.mBuffer);
+        this.mOffsetList = new Uint32Array(this.mBuffer, result.header.offsetList.ptr, result.header.offsetList.length / 4);
+        this.mLayout = new Uint32Array(this.mBuffer, result.header.layout.ptr, result.header.layout.length / 4);
+        this.mDataOffset = result.header.data.ptr;
     }
 }
