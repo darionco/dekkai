@@ -51,11 +51,8 @@ export class DataChunkRow extends Row {
         }
     }
 
-    async setIndex(index) {
+    setIndex(index) {
         this.mIndex = index;
-        if (!this.mChunk.loaded) {
-            await this.load();
-        }
         this.mRowOffset = this.mChunk.offsetList[index] / 4;
         this.mRowColumnCount = this.mChunk.layout[this.mRowOffset];
         this.mRowStatus = this.mChunk.layout[this.mRowOffset + 2];

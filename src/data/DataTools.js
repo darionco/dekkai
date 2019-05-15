@@ -279,11 +279,11 @@ export async function iterateBlobs(blobs, header, itr, config = defaultConfig) {
         const results = {};
         let blobIndex = 0;
         let index = 0;
-        const invokeIterator = async result => {
+        const invokeIterator = result => {
             const chunk = DataChunk.fromLoadResult(result);
             row.chunk = chunk;
             for (let i = 0; i < chunk.rowCount; ++i) {
-                await row.setIndex(i);
+                row.setIndex(i);
                 itr(row, index++);
             }
             chunk.unload();
@@ -293,14 +293,14 @@ export async function iterateBlobs(blobs, header, itr, config = defaultConfig) {
             }
         };
 
-        const handleResult = async result => {
+        const handleResult = result => {
             if (result.index === blobIndex) {
-                await invokeIterator(result);
+                invokeIterator(result);
                 if (tasks.length) {
                     workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
                 }
                 while (results.hasOwnProperty(++blobIndex)) {
-                    await invokeIterator(results[blobIndex]);
+                    invokeIterator(results[blobIndex]);
                     delete results[blobIndex];
                     if (tasks.length) {
                         workerPool.scheduleTask('parseBlob', tasks.shift()).then(handleResult);
