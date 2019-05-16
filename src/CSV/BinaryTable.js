@@ -1,5 +1,5 @@
 import {DataFile} from '../data/DataFile';
-import {binaryFromBlobs, defaultConfig, readHeader, sliceFile} from '../data/DataTools';
+import {binaryChunksFromBlobs, defaultConfig, mergeChunksIntoBuffer, readHeader, sliceFile} from '../data/DataTools';
 import {getDecoder} from '../data/Decoder';
 import {BinaryRow} from './BinaryRow';
 
@@ -9,7 +9,8 @@ export class BinaryTable {
         const config = Object.freeze(Object.assign({}, defaultConfig, configuration));
         const {header, offset} = await readHeader(dataFile, config);
         const blobs = await sliceFile(dataFile, offset, config);
-        const binary = await binaryFromBlobs(blobs, header, config);
+        const result = await binaryChunksFromBlobs(blobs, header, config);
+        const binary = await mergeChunksIntoBuffer(result.chunks, result.header, config);
 
         return new BinaryTable(binary.header, binary.data, config);
     }
