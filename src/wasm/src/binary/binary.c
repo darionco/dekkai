@@ -65,7 +65,7 @@ void _binary_processHeader(ParserResult *parsed, BinaryResult *result, uint32 co
         if (parsed->columns[i].stringCount > parsed->columns[i].intCount + parsed->columns[i].floatCount)
         {
             result->header.types[i] = TYPE_STRING;
-            result->header.lengths[i] = MIN(parsed->columns[i].maxLength, 255) + 1;
+            result->header.lengths[i] = (MIN(parsed->columns[i].maxLength, 255) + 4) & ~0x03;
         }
         else if (parsed->columns[i].floatCount != 0)
         {

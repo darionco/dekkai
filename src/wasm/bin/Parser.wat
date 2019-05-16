@@ -464,8 +464,10 @@
         i32.const 255
         i32.lt_u
         select
-        i32.const 1
+        i32.const 4
         i32.add
+        i32.const -4
+        i32.and
       else
         local.get 1
         i32.load offset=12
