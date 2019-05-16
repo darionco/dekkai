@@ -4,7 +4,7 @@ import {Table} from './csv/Table';
 import {WebCPU} from 'webcpu';
 import wasmData from './wasm/bin/Parser.wasm';
 import {DataFile} from './data/DataFile';
-import {defaultConfig, readHeader, sliceFile, iterateBlobs} from './data/DataTools';
+import * as DataTools from './data/DataTools';
 import {BinaryTable} from './CSV/BinaryTable';
 
 /* handle running in node.js */
@@ -12,9 +12,22 @@ const kIsNodeJS = Object.prototype.toString.call(typeof process !== 'undefined' 
 
 const _dekkai = (function() {
     const initializedSymbol = Symbol('dekkai::initialized');
+
     class dekkai {
         constructor() {
             this[initializedSymbol] = null;
+        }
+
+        get DataFile() {
+            return DataFile;
+        }
+
+        get DataTools() {
+            return DataTools;
+        }
+
+        get WorkerPool() {
+            return WorkerPool;
         }
 
         async init(workerCount = -1) {
@@ -68,10 +81,10 @@ const _dekkai = (function() {
         async iterateLocalFile(file, itr, options = null) {
             await this.init();
             const dataFile = new DataFile(file);
-            const config = Object.freeze(Object.assign({}, defaultConfig, options));
-            const {header, offset} = await readHeader(dataFile, config);
-            const blobs = await sliceFile(dataFile, offset, config);
-            await iterateBlobs(blobs, header, itr, config);
+            const config = Object.freeze(Object.assign({}, DataTools.defaultConfig, options));
+            const {header, offset} = await DataTools.readHeader(dataFile, config);
+            const blobs = await DataTools.sliceFile(dataFile, offset, config);
+            await DataTools.iterateBlobs(blobs, header, itr, config);
         }
 
         async binaryFromLocalFile(file, options = null) {
