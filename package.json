@@ -1,6 +1,6 @@
 {
     "name": "dekkai",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "Modern and fast, really fast, CSV parser for the browser and node.js",
     "entry": "src/index.js",
     "main": "dist/esm/dekkai.js",
