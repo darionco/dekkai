@@ -332,7 +332,7 @@ function mergeIntoBuffer(view, header, parsed, offset) {
                 parsedOffset + parsed.header.offsets[ii],
                 view,
                 off + header.columns[ii].offset,
-                header.columns[ii].type
+                header.columns[ii].type,
             );
         }
         off += header.rowLength;
@@ -402,7 +402,7 @@ function mergeParsedResults(options) {
                 new DataView(message.options.buffer),
                 message.options.binaryHeader,
                 message.options.parsed,
-                message.options.dataOffset
+                message.options.dataOffset,
             );
             sendSuccess(gID, {});
             break;

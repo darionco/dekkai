@@ -21,7 +21,7 @@ export function utf8ToStr(view, offset, length) {
                 // 110x xxxx   10xx xxxx
                 result += String.fromCharCode(
                     ((c & 0x1F) << 6) |
-                    (view.getUint8(offset + (++i)) & 0x3F)
+                    (view.getUint8(offset + (++i)) & 0x3F),
                 );
                 break;
 
@@ -30,7 +30,7 @@ export function utf8ToStr(view, offset, length) {
                 result += String.fromCharCode(
                     ((c & 0x0F)) << 12 |
                     ((view.getUint8(offset + (++i)) & 0x3F) << 6) |
-                    (view.getUint8(offset + (++i)) & 0x3F)
+                    (view.getUint8(offset + (++i)) & 0x3F),
                 );
                 break;
 
