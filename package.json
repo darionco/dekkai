@@ -24,6 +24,10 @@
         "watch": "rollup --config --watch",
         "prepublishOnly": "npm-run-all build"
     },
+    "repository": {	
+        "type": "git",
+        "url": "https://github.com/darionco/dekkai.git"
+    },
     "devDependencies": {
         "cross-env": "^7.0.2",
         "eslint": "^6.8.0",
